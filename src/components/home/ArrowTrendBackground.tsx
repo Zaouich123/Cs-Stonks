@@ -31,72 +31,36 @@ export function ArrowTrendBackground() {
         }}
         transition={{ type: "spring", stiffness: 50, damping: 20 }}
       >
-        <svg
-          className="absolute inset-0 h-full w-full opacity-[0.07]"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
+        {/* Main trend arrow shooting up */}
+        <motion.div
+          className="absolute bottom-0 left-0"
+          initial={{ x: "-20vw", y: "20vh", opacity: 0 }}
+          animate={{ x: "120vw", y: "-100vh", opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          {/* Abstract upward lines/arrows representing market momentum */}
-          <motion.path
-            d="M10 90 L30 50 L40 60 L70 20 L80 30"
-            fill="none"
-            stroke="#4da3ff"
-            strokeWidth="0.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-          />
-          <motion.path
-            d="M20 110 L40 70 L50 80 L80 40 L90 50"
-            fill="none"
-            stroke="#093066"
-            strokeWidth="0.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 2.5, ease: "easeOut", delay: 0.2 }}
-          />
-          <motion.path
-            d="M30 130 L50 90 L60 100 L90 60 L100 70"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="0.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ duration: 3, ease: "easeOut", delay: 0.4 }}
-          />
-        </svg>
+          <div className="flex items-center -rotate-[35deg] drop-shadow-[0_0_15px_rgba(77,163,255,0.5)]">
+            <div className="h-[2px] w-[40vw] bg-gradient-to-r from-transparent via-[#093066] to-[#4da3ff]" />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-[#4da3ff] -ml-4">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </motion.div>
 
-        {/* Floating particles/arrows */}
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full bg-[#4da3ff] blur-[1px]"
-            style={{
-              width: Math.random() * 4 + 2 + "px",
-              height: Math.random() * 12 + 8 + "px",
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-              opacity: Math.random() * 0.3 + 0.1,
-              clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)", // Arrow shape
-            }}
-            animate={{
-              y: ["0%", "-50%", "-100%"],
-              opacity: [0, 0.4, 0],
-            }}
-            transition={{
-              duration: Math.random() * 5 + 5,
-              repeat: Infinity,
-              ease: "linear",
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
+        {/* Secondary subtle trend arrow */}
+        <motion.div
+          className="absolute bottom-[10vh] left-0"
+          initial={{ x: "-10vw", y: "30vh", opacity: 0 }}
+          animate={{ x: "100vw", y: "-120vh", opacity: [0, 0.4, 0.4, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        >
+          <div className="flex items-center -rotate-[45deg] drop-shadow-[0_0_10px_rgba(9,48,102,0.5)]">
+            <div className="h-[1px] w-[50vw] bg-gradient-to-r from-transparent via-[#030816] to-[#093066]" />
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" className="text-[#093066] -ml-3">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </motion.div>
+
       </motion.div>
     </div>
   );

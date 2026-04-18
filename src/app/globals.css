@@ -42,3 +42,28 @@ a {
 ::selection {
   background: rgba(77, 163, 255, 0.3);
 }
+
+@keyframes aurora-bg {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 50%; }
+  100% { background-position: 0% 0%; }
+}
+
+.aurora-text-clip {
+  background: 
+    radial-gradient(circle at 10% 20%, #00c2ff 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, #33ff8c 0%, transparent 50%),
+    radial-gradient(circle at 50% 10%, #ffc640 0%, transparent 50%),
+    radial-gradient(circle at 30% 90%, #e54cff 0%, transparent 50%),
+    radial-gradient(circle at 70% 40%, #4da3ff 0%, transparent 50%);
+  background-color: #093066;
+  background-blend-mode: hard-light;
+  background-size: 200% 200%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: aurora-bg 8s infinite alternate ease-in-out;
+  display: inline-block;
+}
