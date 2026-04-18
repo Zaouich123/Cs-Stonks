@@ -3,7 +3,11 @@ import { SyncStatus, SyncType } from "@prisma/client";
 import { logger } from "@/lib/logger";
 import type { CatalogProvider } from "@/modules/providers/provider.types";
 import { normalizeCatalogItem } from "@/modules/catalog/catalog.normalizer";
-import type { CatalogSyncResult, ItemRepository } from "@/modules/catalog/catalog.types";
+import type {
+  CatalogSyncResult,
+  ItemRepository,
+  NormalizedCatalogItem,
+} from "@/modules/catalog/catalog.types";
 import type { SyncRunRepository } from "@/modules/sync-runs/sync-run.types";
 
 function toErrorMessage(error: unknown): string {
@@ -34,7 +38,7 @@ export class CatalogSyncService {
       const rawItems = await this.provider.fetchCatalog();
       totalReceived = rawItems.length;
 
-      const normalizedItems = [];
+      const normalizedItems: NormalizedCatalogItem[] = [];
       const errors: string[] = [];
 
       for (const rawItem of rawItems) {
@@ -46,6 +50,21 @@ export class CatalogSyncService {
       }
 
       const persisted = await this.itemRepository.upsertMany(normalizedItems);
+      const sources = [...new Set(normalizedItems.map((item) => item.source))];
+      const deactivatedCounts = await Promise.all(
+        sources.map((source) =>
+          this.itemRepository.deactivateMissing(
+            source,
+            normalizedItems
+              .filter((item) => item.source === source)
+              .map((item) => item.variantKey),
+          ),
+        ),
+      );
+      const imagesResolved = normalizedItems.filter(
+        (item) => Boolean(item.imageUrl || item.steamImageUrl),
+      ).length;
+      const imagesMissing = normalizedItems.length - imagesResolved;
       const status = errors.length > 0 ? SyncStatus.PARTIAL : SyncStatus.SUCCESS;
       const durationMs = Date.now() - startedAt;
 
@@ -57,8 +76,11 @@ export class CatalogSyncService {
         itemsSucceeded: persisted.totalPersisted,
         metadata: {
           created: persisted.created,
+          deactivated: deactivatedCounts.reduce((sum, count) => sum + count, 0),
           durationMs,
           errors,
+          imagesMissing,
+          imagesResolved,
           updated: persisted.updated,
         },
         status,
@@ -67,6 +89,8 @@ export class CatalogSyncService {
       const logContext = {
         durationMs,
         failed: errors.length,
+        imagesMissing,
+        imagesResolved,
         persisted: persisted.totalPersisted,
         provider: this.provider.provider,
         received: totalReceived,
@@ -82,6 +106,9 @@ export class CatalogSyncService {
         created: persisted.created,
         errors,
         failed: errors.length,
+        imagesMissing,
+        imagesResolved,
+        itemsProcessed: normalizedItems.length,
         provider: this.provider.provider,
         status,
         syncRunId: syncRun.id,

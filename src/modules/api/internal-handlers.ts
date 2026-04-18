@@ -11,16 +11,15 @@ import {
 import {
   catalogProviderSources,
   priceProviderSources,
+  resolveCatalogProviderSource,
   resolvePriceProviderSource,
 } from "@/modules/providers/provider.types";
 
 const catalogRequestSchema = z
   .object({
-    source: z.enum(catalogProviderSources).default("json"),
+    source: z.enum(catalogProviderSources).optional(),
   })
-  .default({
-    source: "json",
-  });
+  .default({});
 
 const pricesRequestSchema = z
   .object({
@@ -46,12 +45,18 @@ const latestPricesQuerySchema = z.object({
 export async function handleCatalogSyncRoute(request: Request) {
   try {
     const body = catalogRequestSchema.parse(await readOptionalJson(request));
-    const result = await createCatalogSyncService(body.source).syncCatalog();
+    const result = await createCatalogSyncService(
+      resolveCatalogProviderSource(body.source, resolveCatalogProviderSource(process.env.CATALOG_PROVIDER, "bymykel")),
+    ).syncCatalog();
 
     return successResponse(result, 200);
   } catch (error) {
     return handleRouteError(error);
   }
+}
+
+export async function handleCatalogRefreshImagesRoute(request: Request) {
+  return handleCatalogSyncRoute(request);
 }
 
 export async function handleLatestPricesSyncRoute(request: Request) {
@@ -109,6 +114,8 @@ export async function handleHealthRoute() {
 }
 
 export const POSTCatalogSync = handleCatalogSyncRoute;
+export const POSTCatalogImport = handleCatalogSyncRoute;
+export const POSTCatalogRefreshImages = handleCatalogRefreshImagesRoute;
 export const POSTPricesSync = handleLatestPricesSyncRoute;
 export const POSTDailySnapshot = handleDailySnapshotRoute;
 export const GETLatestPrices = handleLatestPricesQueryRoute;

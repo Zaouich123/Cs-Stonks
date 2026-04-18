@@ -10,7 +10,11 @@ import { normalizeSearchText } from "@/modules/catalog/catalog.normalizer";
 import { Prisma, type PrismaClient } from "@prisma/client";
 
 function buildItemWhere(input: Pick<ListItemsInput, "itemType" | "query">): Prisma.ItemWhereInput {
-  const clauses: Prisma.ItemWhereInput[] = [];
+  const clauses: Prisma.ItemWhereInput[] = [
+    {
+      isActive: true,
+    },
+  ];
 
   if (input.itemType) {
     clauses.push({
@@ -75,14 +79,17 @@ export class PrismaItemReadRepository implements ItemReadRepository {
       this.prisma.item.findMany({
         orderBy,
         select: {
+          baseItemName: true,
           collection: true,
           createdAt: true,
           displayName: true,
           exterior: true,
+          hasVariants: true,
           id: true,
           imageUrl: true,
           isActive: true,
           itemType: true,
+          lastCatalogSyncAt: true,
           latestPrices: {
             select: {
               currency: true,
@@ -93,6 +100,9 @@ export class PrismaItemReadRepository implements ItemReadRepository {
           phase: true,
           rarity: true,
           slug: true,
+          source: true,
+          sourceExternalId: true,
+          steamAppId: true,
           steamImageUrl: true,
           updatedAt: true,
           _count: {
@@ -115,14 +125,17 @@ export class PrismaItemReadRepository implements ItemReadRepository {
         const lowestCurrentPrice = toLowestCurrentPrice(item.latestPrices);
 
         return {
+          baseItemName: item.baseItemName,
           collection: item.collection,
           createdAt: item.createdAt,
           displayName: item.displayName,
           exterior: item.exterior,
+          hasVariants: item.hasVariants,
           id: item.id,
           imageUrl: item.imageUrl,
           isActive: item.isActive,
           itemType: item.itemType,
+          lastCatalogSyncAt: item.lastCatalogSyncAt,
           latestPriceCount: item._count.latestPrices,
           lowestCurrentPrice: lowestCurrentPrice.price,
           lowestCurrentPriceCurrency: lowestCurrentPrice.currency,
@@ -130,6 +143,9 @@ export class PrismaItemReadRepository implements ItemReadRepository {
           phase: item.phase,
           rarity: item.rarity,
           slug: item.slug,
+          source: item.source,
+          sourceExternalId: item.sourceExternalId,
+          steamAppId: item.steamAppId,
           steamImageUrl: item.steamImageUrl,
           updatedAt: item.updatedAt,
         };
@@ -141,22 +157,28 @@ export class PrismaItemReadRepository implements ItemReadRepository {
   async findById(itemId: string): Promise<ItemDetailRow | null> {
     return this.prisma.item.findUnique({
       select: {
+        baseItemName: true,
         collection: true,
         createdAt: true,
         displayName: true,
         exterior: true,
+        hasVariants: true,
         id: true,
         imageUrl: true,
         isActive: true,
         itemType: true,
+        lastCatalogSyncAt: true,
         marketHashName: true,
         phase: true,
         rarity: true,
         searchText: true,
         skinName: true,
         slug: true,
+        source: true,
+        sourceExternalId: true,
         souvenir: true,
         stattrak: true,
+        steamAppId: true,
         steamImageUrl: true,
         updatedAt: true,
         variantKey: true,

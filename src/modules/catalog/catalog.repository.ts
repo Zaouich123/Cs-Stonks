@@ -25,6 +25,23 @@ export class PrismaItemRepository implements ItemRepository {
     return this.prisma.item.count();
   }
 
+  async deactivateMissing(source: string, activeVariantKeys: string[]): Promise<number> {
+    const result = await this.prisma.item.updateMany({
+      data: {
+        isActive: false,
+      },
+      where: {
+        isActive: true,
+        source,
+        variantKey: {
+          notIn: activeVariantKeys,
+        },
+      },
+    });
+
+    return result.count;
+  }
+
   async findByVariantKeys(keys: string[]): Promise<Map<string, ItemLookup>> {
     if (keys.length === 0) {
       return new Map();
@@ -110,39 +127,51 @@ export class PrismaItemRepository implements ItemRepository {
       uniqueItems.map((item) =>
         this.prisma.item.upsert({
           create: {
+            baseItemName: item.baseItemName,
             collection: item.collection,
             displayName: item.displayName,
             exterior: item.exterior,
+            hasVariants: item.hasVariants,
             imageUrl: item.imageUrl,
             isActive: item.isActive,
             itemType: item.itemType,
+            lastCatalogSyncAt: item.lastCatalogSyncAt,
             marketHashName: item.marketHashName,
             phase: item.phase,
             rarity: item.rarity,
             searchText: item.searchText,
             skinName: item.skinName,
             slug: item.slug,
+            source: item.source,
+            sourceExternalId: item.sourceExternalId,
             souvenir: item.souvenir,
             stattrak: item.stattrak,
+            steamAppId: item.steamAppId,
             steamImageUrl: item.steamImageUrl,
             variantKey: item.variantKey,
             weapon: item.weapon,
           },
           update: {
+            baseItemName: item.baseItemName,
             collection: item.collection,
             displayName: item.displayName,
             exterior: item.exterior,
+            hasVariants: item.hasVariants,
             imageUrl: item.imageUrl,
             isActive: item.isActive,
             itemType: item.itemType,
+            lastCatalogSyncAt: item.lastCatalogSyncAt,
             marketHashName: item.marketHashName,
             phase: item.phase,
             rarity: item.rarity,
             searchText: item.searchText,
             skinName: item.skinName,
             slug: item.slug,
+            source: item.source,
+            sourceExternalId: item.sourceExternalId,
             souvenir: item.souvenir,
             stattrak: item.stattrak,
+            steamAppId: item.steamAppId,
             steamImageUrl: item.steamImageUrl,
             weapon: item.weapon,
           },

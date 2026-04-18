@@ -27,14 +27,17 @@ export interface ListItemsInput {
 }
 
 export interface ListItemsRow {
+  baseItemName: string | null;
   collection: string | null;
   createdAt: Date;
   displayName: string;
   exterior: string | null;
+  hasVariants: boolean;
   id: string;
   imageUrl: string | null;
   isActive: boolean;
   itemType: ItemType;
+  lastCatalogSyncAt: Date | null;
   latestPriceCount: number;
   lowestCurrentPrice: number | null;
   lowestCurrentPriceCurrency: string | null;
@@ -42,6 +45,9 @@ export interface ListItemsRow {
   phase: string | null;
   rarity: string | null;
   slug: string;
+  source: string;
+  sourceExternalId: string | null;
+  steamAppId: number;
   steamImageUrl: string | null;
   updatedAt: Date;
 }
@@ -52,22 +58,28 @@ export interface ListItemsResult {
 }
 
 export interface ItemDetailRow {
+  baseItemName: string | null;
   collection: string | null;
   createdAt: Date;
   displayName: string;
   exterior: string | null;
+  hasVariants: boolean;
   id: string;
   imageUrl: string | null;
   isActive: boolean;
   itemType: ItemType;
+  lastCatalogSyncAt: Date | null;
   marketHashName: string;
   phase: string | null;
   rarity: string | null;
   searchText: string;
   skinName: string | null;
   slug: string;
+  source: string;
+  sourceExternalId: string | null;
   souvenir: boolean;
   stattrak: boolean;
+  steamAppId: number;
   steamImageUrl: string | null;
   updatedAt: Date;
   variantKey: string;

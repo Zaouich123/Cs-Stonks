@@ -1,4 +1,4 @@
-export const catalogProviderSources = ["json", "mock"] as const;
+export const catalogProviderSources = ["bymykel", "local_fallback", "json", "mock"] as const;
 export const priceProviderSources = ["json", "mock", "real"] as const;
 
 export type CatalogProviderSource = (typeof catalogProviderSources)[number];
@@ -14,17 +14,23 @@ export interface PriceSyncTargetItem {
 }
 
 export interface RawCatalogProviderItem {
+  baseItemName?: string | null;
   collection?: string | null;
   displayName?: string | null;
   exterior?: string | null;
+  hasVariants?: boolean | null;
   imageUrl?: string | null;
   itemType: string;
+  lastCatalogSyncAt?: string | null;
   marketHashName: string;
   phase?: string | null;
   rarity?: string | null;
   skinName?: string | null;
+  source?: string | null;
+  sourceExternalId?: string | null;
   souvenir?: boolean | null;
   stattrak?: boolean | null;
+  steamAppId?: number | null;
   steamImageUrl?: string | null;
   weapon?: string | null;
 }
@@ -85,6 +91,21 @@ export interface PriceProvider {
 
 export function isPriceProviderSource(value: string): value is PriceProviderSource {
   return priceProviderSources.includes(value as PriceProviderSource);
+}
+
+export function isCatalogProviderSource(value: string): value is CatalogProviderSource {
+  return catalogProviderSources.includes(value as CatalogProviderSource);
+}
+
+export function resolveCatalogProviderSource(
+  value?: string | null,
+  fallback: CatalogProviderSource = "bymykel",
+): CatalogProviderSource {
+  if (!value) {
+    return fallback;
+  }
+
+  return isCatalogProviderSource(value) ? value : fallback;
 }
 
 export function resolvePriceProviderSource(

@@ -5,11 +5,16 @@ import { HealthQueryService } from "@/modules/health/health.service";
 import { PrismaItemReadRepository } from "@/modules/items/item.repository";
 import { ItemQueryService } from "@/modules/items/item.service";
 import { PrismaMarketRepository } from "@/modules/markets/market.repository";
+import { ByMykelCatalogProvider } from "@/modules/providers/bymykel-catalog.provider";
 import { JsonCatalogProvider } from "@/modules/providers/json-catalog.provider";
 import { JsonPriceProvider } from "@/modules/providers/json-price.provider";
+import { LocalFallbackCatalogProvider } from "@/modules/providers/local-fallback-catalog.provider";
 import { MockCatalogProvider } from "@/modules/providers/mock-catalog.provider";
 import { MockPriceProvider } from "@/modules/providers/mock-price.provider";
-import { resolvePriceProviderSource } from "@/modules/providers/provider.types";
+import {
+  resolveCatalogProviderSource,
+  resolvePriceProviderSource,
+} from "@/modules/providers/provider.types";
 import { SteamPriceProvider } from "@/modules/providers/steam/steam-price.provider";
 import type {
   CatalogProvider,
@@ -26,12 +31,16 @@ import { PrismaSyncRunRepository } from "@/modules/sync-runs/sync-run.repository
 
 function createCatalogProvider(source: CatalogProviderSource): CatalogProvider {
   switch (source) {
+    case "bymykel":
+      return new ByMykelCatalogProvider();
     case "json":
       return new JsonCatalogProvider();
+    case "local_fallback":
+      return new LocalFallbackCatalogProvider();
     case "mock":
       return new MockCatalogProvider();
     default:
-      return new JsonCatalogProvider();
+      return new ByMykelCatalogProvider();
   }
 }
 
@@ -48,7 +57,9 @@ function createPriceProvider(source: PriceProviderSource): PriceProvider {
   }
 }
 
-export function createCatalogSyncService(source: CatalogProviderSource = "json") {
+export function createCatalogSyncService(
+  source: CatalogProviderSource = resolveCatalogProviderSource(process.env.CATALOG_PROVIDER, "bymykel"),
+) {
   return new CatalogSyncService(
     createCatalogProvider(source),
     new PrismaItemRepository(prisma),

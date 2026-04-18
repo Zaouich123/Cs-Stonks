@@ -17,6 +17,10 @@ enum ItemType {
   GLOVE
   CHARM
   AGENT
+  TOOL
+  MUSIC_KIT
+  GRAFFITI
+  PATCH
   OTHER
 }
 
@@ -44,14 +48,20 @@ model Item {
   weapon         String?
   skinName       String?
   displayName    String
+  baseItemName   String?
   exterior       String?
   rarity         String?
   stattrak       Boolean         @default(false)
   souvenir       Boolean         @default(false)
+  hasVariants    Boolean         @default(false)
   phase          String?
   collection     String?
   imageUrl       String?
   steamImageUrl  String?
+  steamAppId     Int             @default(730)
+  source         String          @default("unknown")
+  sourceExternalId String?
+  lastCatalogSyncAt DateTime?
   isActive       Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -62,6 +72,8 @@ model Item {
   @@index([marketHashName])
   @@index([searchText])
   @@index([itemType])
+  @@index([source, isActive])
+  @@index([baseItemName])
   @@unique([marketHashName, phase], map: "item_market_hash_name_phase_unique")
 }
 
