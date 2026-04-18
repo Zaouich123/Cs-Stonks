@@ -1,62 +1,130 @@
-import * as React from "react";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+"use client";
 
-export function PricesTable() {
-  const dummyData = [
-    { name: "AK-47 | Redline (Field-Tested)", market: "Skinport", price: 36.71, trend: 3.29, positive: true, img: "https://community.fastly.steamstatic.com/economy/image/-9a81dlWLwJ2UXncP3Rlwb_BBocMKwLhgBpHufDJYcleP47GYtXbm_xTJBicxfDieryQj09HAMdPl_uXW_YEkuf5OZWFZA53K9FVpvvxN1hfx_LNbTk97deCkL-JlvD4DLfQhG5u5cB1g_zMu4n0jAO3_UtkYjj1Jde_dQA3YV6B8lK5xObu1pW16pXAyyBl7CBx7SiBz0PkjQeSLRppuqaHEPcXqWKN-P_Yl2sN/360fx360f" },
-    { name: "AWP | Asiimov (Field-Tested)", market: "Buff", price: 104.50, trend: 1.2, positive: false, img: "https://community.fastly.steamstatic.com/economy/image/-9a81dlWLwJ2UXncP3Rlwb_BBocMKwLhgBpHufDJYcleP47GYtXbm_xTJBicxfDieryQj09HAMdPl_uXW_YEkuf5OZWFZA53K9BVovbxN1hfx_LNbTk97deCkL-Jlvr4MLrchG5u5cB1g_zMu4n00QziqhJrMmz3ItKRcFc3YAzVqAK_wOjvg8K_vJqbzHE1vSkn4yqIyRbgiRpSLrs4HS3fxqQ/360fx360f" },
-    { name: "M4A4 | Howl (Minimal Wear)", market: "CSFloat", price: 4200.00, trend: 5.4, positive: true, img: "https://community.fastly.steamstatic.com/economy/image/-9a81dlWLwJ2UXncP3Rlwb_BBocMKwLhgBpHufDJYcleP47GYtXbm_xTJBicxfDieryQj09HAMdPl_uXW_YEkuf5OZWFZA53K9FVpvvxN1h3x_LNbW9W7dKJl4OOkuTxDLDQhGpd68hyt72R9I-h0Ve1_kFvZWGiI4aLJwRoZFHX-Vi-xb-6jJe86cnImCRkvygj5GGIHCnQiA/360fx360f" },
-    { name: "Desert Eagle | Printstream (FN)", market: "Skinport", price: 85.20, trend: 0.8, positive: true, img: "https://community.fastly.steamstatic.com/economy/image/-9a81dlWLwJ2UXncP3Rlwb_BBocMKwLhgBpHufDJYcleP47GYtXbm_xTJBicxfDieryQj09HAMdPl_uXW_YEkuf5dNOFKfzIBqtRlMPaOcyVAWZL2dC8P7iGx9HZYOP2MbmIk2kGscAj2r2T99Sn3QCx_0JrZmqiLdSQdwZqNQvR-FW_wOns15Dv6M6dm3tlvHIn5CuLm0eyyhFEaOZrh_afVxzAyKYJbHzJnQ/360fx360f" },
-    { name: "Karambit | Doppler (Factory New)", market: "Skinport", price: 1250.00, trend: 0.4, positive: false, img: "https://community.fastly.steamstatic.com/economy/image/-9a81dlWLwJ2UXncP3Rlwb_BBocMKwLhgBpHufDJYcleP47GYtXbm_xTJBicxfDieryQj09HAMdPl_uXW_YEkuf5MYZR-I2JRoJFV5On3e1lfwPb2fizjb3YzvKOlqD1avYJl2Aa54Zy3r2S94rBi1az_UVrNm_3J4eXdVRoZ12G81O9kuzqhxMPovs7KziB17ih25CuNmkSzn0xLOOM8mvCaVxzAUMxbhxrY/360fx360f" },
-  ];
+import * as React from "react";
+import Link from "next/link";
+
+interface ItemRow {
+  id: string;
+  displayName: string;
+  imageUrl: string | null;
+  steamImageUrl: string | null;
+  source: string;
+  lowestCurrentPrice: number | null;
+  lowestCurrentPriceCurrency: string | null;
+  itemType: string;
+  rarity: string | null;
+}
+
+interface PricesTableProps {
+  query: string;
+  itemType: string;
+}
+
+export function PricesTable({ query, itemType }: PricesTableProps) {
+  const [items, setItems] = React.useState<ItemRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [totalItems, setTotalItems] = React.useState(0);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  React.useEffect(() => {
+    clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.set("limit", "30");
+      if (query.trim()) params.set("query", query.trim());
+      if (itemType) params.set("itemType", itemType);
+
+      fetch(`/api/items?${params.toString()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.data) {
+            setItems(data.data.items ?? []);
+            setTotalItems(data.data.totalItems ?? 0);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }, query ? 300 : 0); // debounce only text queries
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query, itemType]);
+
+  const getImgSrc = (item: ItemRow) => item.imageUrl || item.steamImageUrl || null;
 
   return (
     <div className="overflow-x-auto w-full mt-2">
-      <table className="w-full text-left border-collapse min-w-[600px]">
-        <thead>
-          <tr className="border-b border-white/5 text-[color:var(--color-muted)] text-sm">
-            <th className="pb-4 font-medium px-4 whitespace-nowrap">Item Name</th>
-            <th className="pb-4 font-medium px-4 whitespace-nowrap">Market</th>
-            <th className="pb-4 font-medium px-4 text-right whitespace-nowrap">Price</th>
-            <th className="pb-4 font-medium px-4 text-right whitespace-nowrap">24h Trend</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dummyData.map((row, idx) => (
-            <tr key={idx} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
-              <td className="py-4 px-4">
-                <Link href="/analyze" className="flex items-center gap-3 font-medium text-white group-hover:text-[#4da3ff] transition-colors">
-                  <Image
-                    src={row.img}
-                    alt={row.name}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 object-contain rounded-lg bg-white/5 p-1 shrink-0"
-                    unoptimized
-                  />
-                  <span>{row.name}</span>
-                </Link>
-              </td>
-              <td className="py-4 px-4 text-[color:var(--color-muted)] text-sm">
-                <span className="bg-[#0d182a] border border-white/5 px-2.5 py-1 rounded-md">
-                  {row.market}
-                </span>
-              </td>
-              <td className="py-4 px-4 text-right font-mono text-white">
-                ${row.price.toFixed(2)}
-              </td>
-              <td className="py-4 px-4 text-right">
-                <div className={`inline-flex items-center justify-end gap-1 text-sm font-medium ${row.positive ? "text-green-500" : "text-red-500"}`}>
-                  {row.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                  {row.positive ? "+" : "-"}{row.trend}%
-                </div>
-              </td>
+      {/* Results count */}
+      {!loading && (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-white/40">
+            {totalItems} item{totalItems !== 1 ? "s" : ""} found
+          </p>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-6 h-6 border-2 border-white/20 border-t-[#4da3ff] rounded-full animate-spin" />
+          <span className="ml-3 text-white/40 text-sm">Loading market data...</span>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-16 text-white/30 text-sm">
+          {query || itemType ? "No items match your search." : "No items found. Run a catalog sync to populate the database."}
+        </div>
+      ) : (
+        <table className="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr className="border-b border-white/5 text-[color:var(--color-muted)] text-sm">
+              <th className="pb-4 font-medium px-4 whitespace-nowrap">Item Name</th>
+              <th className="pb-4 font-medium px-4 whitespace-nowrap">Type</th>
+              <th className="pb-4 font-medium px-4 whitespace-nowrap">Source</th>
+              <th className="pb-4 font-medium px-4 text-right whitespace-nowrap">Price</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item) => {
+              const imgSrc = getImgSrc(item);
+              return (
+                <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+                  <td className="py-4 px-4">
+                    <Link href="/analyze" className="flex items-center gap-3 font-medium text-white group-hover:text-[#4da3ff] transition-colors">
+                      {imgSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imgSrc}
+                          alt={item.displayName}
+                          className="w-12 h-12 object-contain rounded-lg bg-white/5 p-1 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-white/5 shrink-0 flex items-center justify-center text-white/20 text-xs">N/A</div>
+                      )}
+                      <span>{item.displayName}</span>
+                    </Link>
+                  </td>
+                  <td className="py-4 px-4 text-[color:var(--color-muted)] text-sm">
+                    <span className="bg-[#0d182a] border border-white/5 px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider">
+                      {item.itemType.replace("_", " ")}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-[color:var(--color-muted)] text-sm">
+                    <span className="bg-[#0d182a] border border-white/5 px-2.5 py-1 rounded-md capitalize">
+                      {item.source}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-right font-mono text-white">
+                    {item.lowestCurrentPrice !== null
+                      ? `$${item.lowestCurrentPrice.toFixed(2)}`
+                      : <span className="text-white/30">—</span>
+                    }
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

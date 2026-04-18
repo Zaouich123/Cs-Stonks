@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:local": "npm run db:local:setup && next dev",
+    "dev:docker": "npm run db:docker:setup && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -14,6 +15,10 @@
     "db:local:start": "node ./scripts/local-db-bootstrap.mjs start",
     "db:local:status": "node ./scripts/local-db-bootstrap.mjs status",
     "db:local:stop": "node ./scripts/local-db-bootstrap.mjs stop",
+    "db:docker:setup": "node ./scripts/docker-db-bootstrap.mjs setup",
+    "db:docker:up": "node ./scripts/docker-db-bootstrap.mjs up",
+    "db:docker:status": "node ./scripts/docker-db-bootstrap.mjs status",
+    "db:docker:down": "node ./scripts/docker-db-bootstrap.mjs down",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

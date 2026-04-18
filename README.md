@@ -125,7 +125,34 @@ Elles restent utiles pour les tests et les smoke tests deterministes.
 
 ## Setup local
 
-1. Demarrer PostgreSQL.
+1. Option recommandee avec Docker :
+
+```bash
+npm run db:docker:setup
+```
+
+Cette commande :
+
+- demarre PostgreSQL dans Docker sur `localhost:5432`
+- cree `cs_stonks` et `cs_stonks_shadow`
+- applique le schema Prisma
+- migre les donnees depuis la base courante pointee par `.env`
+- reecrit `.env` vers la base Docker
+
+Commandes utiles :
+
+```bash
+npm run dev:docker
+npm run db:docker:up
+npm run db:docker:status
+npm run db:docker:down
+```
+
+Fichiers Docker :
+
+- [compose.yml](compose.yml)
+- [docker/postgres/init/01-create-shadow-db.sql](docker/postgres/init/01-create-shadow-db.sql)
+
 2. Option rapide sans Docker :
 
 ```bash
@@ -162,7 +189,7 @@ Note pour `prisma dev` :
 - laisser `pgbouncer=true` sur `DATABASE_URL` pour eviter les conflits de prepared statements dans les jobs
 - garder `SHADOW_DATABASE_URL` sans `pgbouncer=true`
 
-## Setup local durable
+## Setup local durable avec Prisma Dev
 
 Si tu n'as pas PostgreSQL installe localement, le workflow le plus simple pour garder une base locale persistante pour ce repo est :
 
