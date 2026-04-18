@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum ItemType {
+  SKIN
+  STICKER
+  CASE
+  CAPSULE
+  KNIFE
+  GLOVE
+  CHARM
+  AGENT
+  OTHER
+}
+
+enum SyncType {
+  CATALOG
+  PRICES
+  SNAPSHOT
+}
+
+enum SyncStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+model Item {
+  id             String          @id @default(cuid())
+  variantKey     String          @unique
+  marketHashName String
+  itemType       ItemType
+  weapon         String?
+  skinName       String?
+  displayName    String
+  exterior       String?
+  rarity         String?
+  stattrak       Boolean         @default(false)
+  souvenir       Boolean         @default(false)
+  phase          String?
+  collection     String?
+  imageUrl       String?
+  steamImageUrl  String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  latestPrices   LatestPrice[]
+  dailySnapshots DailySnapshot[]
+
+  @@index([marketHashName])
+  @@index([itemType])
+  @@unique([marketHashName, phase], map: "item_market_hash_name_phase_unique")
+}
+
+model Market {
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  name           String
+  enabled        Boolean         @default(true)
+  priority       Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  latestPrices   LatestPrice[]
+  dailySnapshots DailySnapshot[]
+}
+
+model LatestPrice {
+  id              String    @id @default(cuid())
+  itemId          String
+  marketId        String
+  price           Decimal   @db.Decimal(12, 2)
+  currency        String    @db.VarChar(3)
+  quantity        Int?
+  volume          Int?
+  fetchedAt       DateTime
+  sourceUpdatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([marketId])
+  @@index([marketId, fetchedAt])
+  @@index([itemId, fetchedAt])
+  @@unique([itemId, marketId], map: "latest_price_item_market_unique")
+}
+
+model DailySnapshot {
+  id              String    @id @default(cuid())
+  snapshotDate    DateTime  @db.Date
+  snapshotHour    String    @db.VarChar(5)
+  itemId          String
+  marketId        String
+  price           Decimal   @db.Decimal(12, 2)
+  currency        String    @db.VarChar(3)
+  quantity        Int?
+  volume          Int?
+  sourceFetchedAt DateTime
+  sourceUpdatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotDate])
+  @@index([itemId, snapshotDate])
+  @@index([marketId, snapshotDate])
+  @@unique([snapshotDate, snapshotHour, itemId, marketId], map: "snapshot_date_hour_item_market_unique")
+}
+
+model SyncRun {
+  id             String     @id @default(cuid())
+  syncType       SyncType
+  provider       String
+  status         SyncStatus
+  startedAt      DateTime   @default(now())
+  finishedAt     DateTime?
+  itemsProcessed Int        @default(0)
+  itemsSucceeded Int        @default(0)
+  itemsFailed    Int        @default(0)
+  errorSummary   String?
+  metadata       Json?
+
+  @@index([syncType, startedAt])
+  @@index([status, startedAt])
+}

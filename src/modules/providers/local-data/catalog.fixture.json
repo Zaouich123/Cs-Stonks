@@ -1,0 +1,102 @@
+[
+  {
+    "marketHashName": "AK-47 | Redline (Field-Tested)",
+    "itemType": "skin",
+    "weapon": "AK-47",
+    "skinName": "Redline",
+    "displayName": "AK-47 | Redline (Field-Tested)",
+    "exterior": "Field-Tested",
+    "rarity": "Classified",
+    "stattrak": false,
+    "souvenir": false,
+    "collection": "Operation Phoenix Weapon Case",
+    "imageUrl": "https://example.com/items/ak-redline.png",
+    "steamImageUrl": "https://steamcdn.example.com/ak-redline.png"
+  },
+  {
+    "marketHashName": "StatTrak AK-47 | Redline (Field-Tested)",
+    "itemType": "skin",
+    "weapon": "AK-47",
+    "skinName": "Redline",
+    "displayName": "StatTrak AK-47 | Redline (Field-Tested)",
+    "exterior": "Field-Tested",
+    "rarity": "Classified",
+    "stattrak": true,
+    "souvenir": false,
+    "collection": "Operation Phoenix Weapon Case",
+    "imageUrl": "https://example.com/items/stattrak-ak-redline.png",
+    "steamImageUrl": "https://steamcdn.example.com/stattrak-ak-redline.png"
+  },
+  {
+    "marketHashName": "AWP | Asiimov (Battle-Scarred)",
+    "itemType": "skin",
+    "weapon": "AWP",
+    "skinName": "Asiimov",
+    "displayName": "AWP | Asiimov (Battle-Scarred)",
+    "exterior": "Battle-Scarred",
+    "rarity": "Covert",
+    "collection": "Operation Phoenix Weapon Case",
+    "imageUrl": "https://example.com/items/awp-asiimov.png",
+    "steamImageUrl": "https://steamcdn.example.com/awp-asiimov.png"
+  },
+  {
+    "marketHashName": "Sticker | Titan (Holo) | Katowice 2014",
+    "itemType": "sticker",
+    "displayName": "Sticker | Titan (Holo) | Katowice 2014",
+    "rarity": "Exotic",
+    "collection": "Katowice 2014",
+    "imageUrl": "https://example.com/items/titan-holo.png",
+    "steamImageUrl": "https://steamcdn.example.com/titan-holo.png"
+  },
+  {
+    "marketHashName": "DreamHack 2014 Legends Capsule",
+    "itemType": "capsule",
+    "displayName": "DreamHack 2014 Legends Capsule",
+    "rarity": "Base Grade",
+    "collection": "DreamHack 2014",
+    "imageUrl": "https://example.com/items/dreamhack-capsule.png",
+    "steamImageUrl": "https://steamcdn.example.com/dreamhack-capsule.png"
+  },
+  {
+    "marketHashName": "Operation Phoenix Weapon Case",
+    "itemType": "case",
+    "displayName": "Operation Phoenix Weapon Case",
+    "rarity": "Base Grade",
+    "collection": "Operation Phoenix",
+    "imageUrl": "https://example.com/items/phoenix-case.png",
+    "steamImageUrl": "https://steamcdn.example.com/phoenix-case.png"
+  },
+  {
+    "marketHashName": "Karambit | Doppler (Factory New)",
+    "itemType": "knife",
+    "weapon": "Karambit",
+    "skinName": "Doppler",
+    "displayName": "Karambit | Doppler (Factory New) - Phase 2",
+    "exterior": "Factory New",
+    "rarity": "Covert",
+    "phase": "Phase 2",
+    "collection": "Chroma 2 Case",
+    "imageUrl": "https://example.com/items/karambit-doppler-p2.png",
+    "steamImageUrl": "https://steamcdn.example.com/karambit-doppler-p2.png"
+  },
+  {
+    "marketHashName": "Sport Gloves | Vice (Minimal Wear)",
+    "itemType": "glove",
+    "displayName": "Sport Gloves | Vice (Minimal Wear)",
+    "exterior": "Minimal Wear",
+    "rarity": "Extraordinary",
+    "collection": "Clutch Case",
+    "imageUrl": "https://example.com/items/vice-gloves.png",
+    "steamImageUrl": "https://steamcdn.example.com/vice-gloves.png"
+  },
+  {
+    "marketHashName": "Lt. Commander Ricksaw | NSWC SEAL",
+    "itemType": "agent",
+    "displayName": "Lt. Commander Ricksaw | NSWC SEAL",
+    "rarity": "Master",
+    "collection": "Shattered Web Agents",
+    "imageUrl": "https://example.com/items/ricksaw-agent.png",
+    "steamImageUrl": "https://steamcdn.example.com/ricksaw-agent.png"
+  }
+]
+
