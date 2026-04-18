@@ -11,6 +11,7 @@ import {
 import {
   catalogProviderSources,
   priceProviderSources,
+  resolvePriceProviderSource,
 } from "@/modules/providers/provider.types";
 
 const catalogRequestSchema = z
@@ -23,10 +24,10 @@ const catalogRequestSchema = z
 
 const pricesRequestSchema = z
   .object({
-    source: z.enum(priceProviderSources).default("json"),
+    source: z.enum(priceProviderSources).optional(),
   })
   .default({
-    source: "json",
+    source: undefined,
   });
 
 const snapshotRequestSchema = z
@@ -56,7 +57,9 @@ export async function handleCatalogSyncRoute(request: Request) {
 export async function handleLatestPricesSyncRoute(request: Request) {
   try {
     const body = pricesRequestSchema.parse(await readOptionalJson(request));
-    const result = await createLatestPricingSyncService(body.source).syncLatestPrices();
+    const result = await createLatestPricingSyncService(
+      resolvePriceProviderSource(body.source, resolvePriceProviderSource(process.env.PRICE_PROVIDER, "json")),
+    ).syncLatestPrices();
 
     return successResponse(result, 200);
   } catch (error) {
@@ -110,4 +113,3 @@ export const POSTPricesSync = handleLatestPricesSyncRoute;
 export const POSTDailySnapshot = handleDailySnapshotRoute;
 export const GETLatestPrices = handleLatestPricesQueryRoute;
 export const GETHealth = handleHealthRoute;
-

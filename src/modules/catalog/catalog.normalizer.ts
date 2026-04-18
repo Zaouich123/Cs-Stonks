@@ -33,6 +33,9 @@ const itemTypeMap: Record<string, ItemType> = {
 };
 
 const exteriorPattern = /\(([^)]+)\)\s*$/;
+const diacriticPattern = /[\u0300-\u036f]/g;
+const nonAlphanumericPattern = /[^a-z0-9]+/g;
+const whitespacePattern = /\s+/g;
 
 function asNullableString(value?: string | null): string | null {
   if (!value) {
@@ -67,33 +70,89 @@ function resolveItemType(itemType: string): ItemType {
   return resolvedType;
 }
 
+export function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(diacriticPattern, "")
+    .toLowerCase()
+    .replace(nonAlphanumericPattern, " ")
+    .replace(whitespacePattern, " ")
+    .trim();
+}
+
 export function buildItemVariantKey(marketHashName: string, phase?: string | null): string {
   const normalizedPhase = asNullableString(phase);
 
   return normalizedPhase ? `${marketHashName.trim()}::${normalizedPhase}` : marketHashName.trim();
 }
 
+export function buildItemSlug(marketHashName: string, phase?: string | null): string {
+  return normalizeSearchText(buildItemVariantKey(marketHashName, phase)).replace(whitespacePattern, "-");
+}
+
+export function buildItemSearchText(
+  item: Pick<
+    NormalizedCatalogItem,
+    | "collection"
+    | "displayName"
+    | "exterior"
+    | "itemType"
+    | "marketHashName"
+    | "phase"
+    | "rarity"
+    | "skinName"
+    | "souvenir"
+    | "stattrak"
+    | "weapon"
+  >,
+): string {
+  const parts = [
+    item.displayName,
+    item.marketHashName,
+    item.weapon,
+    item.skinName,
+    item.exterior,
+    item.rarity,
+    item.collection,
+    item.phase,
+    item.itemType,
+    item.stattrak ? "stattrak" : null,
+    item.souvenir ? "souvenir" : null,
+  ].filter((value): value is string => Boolean(value));
+
+  return normalizeSearchText(parts.join(" "));
+}
+
 export function normalizeCatalogItem(rawItem: RawCatalogProviderItem): NormalizedCatalogItem {
   const item = catalogItemSchema.parse(rawItem);
   const marketHashName = item.marketHashName.trim();
   const phase = asNullableString(item.phase);
-
-  return {
+  const displayName = asNullableString(item.displayName) ?? marketHashName;
+  const itemType = resolveItemType(item.itemType);
+  const exterior = inferExterior(marketHashName, item.exterior);
+  const stattrak = item.stattrak ?? marketHashName.includes("StatTrak");
+  const souvenir = item.souvenir ?? marketHashName.includes("Souvenir");
+  const normalizedItem = {
     collection: asNullableString(item.collection),
-    displayName: asNullableString(item.displayName) ?? marketHashName,
-    exterior: inferExterior(marketHashName, item.exterior),
+    displayName,
+    exterior,
     imageUrl: asNullableString(item.imageUrl),
     isActive: true,
-    itemType: resolveItemType(item.itemType),
+    itemType,
     marketHashName,
     phase,
     rarity: asNullableString(item.rarity),
     skinName: asNullableString(item.skinName),
-    souvenir: item.souvenir ?? marketHashName.includes("Souvenir"),
-    stattrak: item.stattrak ?? marketHashName.includes("StatTrak"),
+    slug: buildItemSlug(marketHashName, phase),
+    souvenir,
+    stattrak,
     steamImageUrl: asNullableString(item.steamImageUrl),
     variantKey: buildItemVariantKey(marketHashName, phase),
     weapon: asNullableString(item.weapon),
   };
-}
 
+  return {
+    ...normalizedItem,
+    searchText: buildItemSearchText(normalizedItem),
+  };
+}

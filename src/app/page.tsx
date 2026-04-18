@@ -1,18 +1,18 @@
 const actionCards = [
   {
     description:
-      "Table Item avec variantes vendables uniques, types filtrables, phase, StatTrak, Souvenir et metadonnees exploitables.",
+      "Table Item avec variantes vendables uniques, types filtrables, phase, StatTrak, Souvenir, slug et searchText pour le read side.",
     title: "Item Catalog",
   },
   {
     description:
-      "LatestPrice conserve l'etat courant par item et par market, tandis que Market centralise steam, skinport, csfloat et futures sources.",
-    title: "Markets + LatestPrice",
+      "LatestPrice conserve l'etat courant par item et par market, tandis que le provider real Steam injecte des donnees externes via timeout, retry et mapping dedie.",
+    title: "Real Ingestion",
   },
   {
     description:
-      "DailySnapshot fige les LatestPrice a 02:05 Europe/Paris sans full fetch, avec audit complet dans SyncRun.",
-    title: "Snapshots + Audit",
+      "DailySnapshot fige les LatestPrice a 02:05 Europe/Paris sans full fetch, et les endpoints /api/items exposent lecture catalogue, latest prices et history.",
+    title: "Read API + Snapshots",
   },
 ];
 
@@ -25,12 +25,32 @@ const internalEndpoints = [
   {
     method: "POST",
     path: "/api/internal/sync/prices",
-    purpose: "Met a jour LatestPrice et Market a partir des fixtures json/mock multi-market.",
+    purpose: "Met a jour LatestPrice et Market depuis json, mock ou le provider real Steam.",
   },
   {
     method: "GET",
     path: "/api/internal/pricing/latest",
     purpose: "Affiche les derniers prix persistes par item et par market pour verification.",
+  },
+  {
+    method: "GET",
+    path: "/api/items",
+    purpose: "Liste les items avec pagination, recherche simple, filtres et metadonnees prêtes pour le frontend.",
+  },
+  {
+    method: "GET",
+    path: "/api/items/:itemId",
+    purpose: "Retourne le detail d'un item du catalogue avec son identite complete.",
+  },
+  {
+    method: "GET",
+    path: "/api/items/:itemId/latest-prices",
+    purpose: "Expose les derniers prix courants par market pour un item donne.",
+  },
+  {
+    method: "GET",
+    path: "/api/items/:itemId/history",
+    purpose: "Expose l'historique DailySnapshot d'un item sous forme de serie exploitable pour des charts.",
   },
   {
     method: "POST",
@@ -49,8 +69,9 @@ const runbook = [
   "npm run dev",
   'curl http://localhost:3000/api/internal/health',
   'curl -X POST http://localhost:3000/api/internal/sync/catalog -H "Content-Type: application/json" -d "{\\"source\\":\\"json\\"}"',
-  'curl -X POST http://localhost:3000/api/internal/sync/prices -H "Content-Type: application/json" -d "{\\"source\\":\\"json\\"}"',
+  'curl -X POST http://localhost:3000/api/internal/sync/prices -H "Content-Type: application/json" -d "{\\"source\\":\\"real\\"}"',
   'curl http://localhost:3000/api/internal/pricing/latest',
+  'curl "http://localhost:3000/api/items?query=ak+redline&limit=10"',
   'curl -X POST http://localhost:3000/api/internal/snapshots/daily -H "Content-Type: application/json" -d "{\\"snapshotHour\\":\\"02:05\\",\\"timeZone\\":\\"Europe/Paris\\"}"',
   "npm run job:catalog",
   "npm run job:prices",
@@ -67,18 +88,17 @@ export default function Home() {
         <div className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr]">
           <div className="space-y-5">
             <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)] sm:text-5xl">
-              V1 data platform prete pour catalogue, multi-market latest prices et snapshots journaliers.
+              Sprint 2: ingestion reelle, API de lecture et base prete pour les futures pages item.
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-[color:var(--color-muted)]">
-              Le sprint aligne Item, Market, LatestPrice, DailySnapshot et SyncRun
-              dans Prisma. Les routes internes restent minces, les jobs sont appelables
-              manuellement, et le scheduler documente la cadence cible sans forcer une
-              infra complexe.
+              Le projet garde la base du sprint 1, puis ajoute un provider reel Steam,
+              des syncs pricing plus robustes, et les endpoints `GET /api/items`
+              necessaires pour brancher un frontend de consultation sans exposer Prisma brut.
             </p>
           </div>
           <div className="rounded-[1.5rem] border border-[color:var(--color-border)] bg-[color:var(--color-card-strong)] p-6">
             <div className="mb-4 font-mono text-xs uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-              Runbook express
+              Runbook sprint 2
             </div>
             <div className="space-y-3">
               {runbook.map((command) => (
@@ -115,10 +135,10 @@ export default function Home() {
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
-              Internal API
+              API
             </p>
             <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
-              Endpoints du sprint
+              Endpoints du sprint 2
             </h2>
           </div>
           <a

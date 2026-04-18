@@ -7,6 +7,10 @@ import type {
   MarketWriteResult,
   NormalizedMarket,
 } from "@/modules/markets/market.types";
+import type {
+  PriceProviderWarning,
+  PriceSyncTargetItem,
+} from "@/modules/providers/provider.types";
 
 export interface NormalizedLatestPrice {
   currency: string;
@@ -58,15 +62,22 @@ export interface LatestPriceWriteResult {
 
 export interface LatestPricingSyncResult {
   created: number;
+  durationMs: number;
   errors: string[];
   failed: number;
+  invalidRows: number;
   marketsCreated: number;
   marketsUpdated: number;
   missingItems: string[];
   provider: string;
+  providerWarnings: PriceProviderWarning[];
+  requestedTargets: number;
   skippedMissingItems: number;
   status: SyncStatus;
   syncRunId: string;
+  totalAttemptedTargets: number;
+  totalIgnored: number;
+  totalMapped: number;
   totalPersisted: number;
   totalReceived: number;
   updated: number;
@@ -86,10 +97,10 @@ export interface LatestPricePreparationResult {
 
 export interface ItemLookupRepository {
   findByVariantKeys(keys: string[]): Promise<Map<string, ItemLookup>>;
+  listPriceSyncTargets(): Promise<PriceSyncTargetItem[]>;
 }
 
 export interface MarketLookupRepository extends MarketRepository {
   findBySlugs(slugs: string[]): Promise<Map<string, MarketLookup>>;
   upsertMany(markets: NormalizedMarket[]): Promise<MarketWriteResult>;
 }
-

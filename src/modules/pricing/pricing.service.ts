@@ -1,5 +1,6 @@
 import { SyncStatus, SyncType } from "@prisma/client";
 
+import { logger } from "@/lib/logger";
 import type { ItemLookupRepository } from "@/modules/pricing/pricing.types";
 import { dedupeLatestPrices, normalizeLatestPrice } from "@/modules/pricing/pricing.normalizer";
 import type {
@@ -68,21 +69,46 @@ export class LatestPricingSyncService {
   ) {}
 
   async syncLatestPrices(): Promise<LatestPricingSyncResult> {
+    const startedAt = Date.now();
+    const targets = await this.itemRepository.listPriceSyncTargets();
     const syncRun = await this.syncRunRepository.startRun({
+      metadata: {
+        requestedTargets: targets.length,
+      },
       provider: this.provider.provider,
       syncType: SyncType.PRICES,
     });
 
+    logger.info("Latest prices sync started.", {
+      provider: this.provider.provider,
+      requestedTargets: targets.length,
+    });
+
+    let attemptedTargets = 0;
     let totalReceived = 0;
+    let providerWarnings: LatestPricingSyncResult["providerWarnings"] = [];
 
     try {
-      const rawPrices = await this.provider.fetchLatestPrices();
-      totalReceived = rawPrices.length;
+      const fetchResult = await this.provider.fetchLatestPrices({
+        items: targets,
+      });
+      attemptedTargets = fetchResult.summary.attemptedTargets;
+      totalReceived = fetchResult.summary.returnedRecords;
+      providerWarnings = fetchResult.summary.warnings;
+
+      logger.info("Latest prices provider fetch completed.", {
+        attemptedTargets,
+        provider: this.provider.provider,
+        receivedRecords: totalReceived,
+        skippedTargets: fetchResult.summary.skippedTargets,
+        truncatedTargets: fetchResult.summary.truncatedTargets,
+        warnings: providerWarnings.length,
+      });
 
       const normalizedPrices = [];
       const errors: string[] = [];
 
-      for (const rawPrice of rawPrices) {
+      for (const rawPrice of fetchResult.items) {
         try {
           normalizedPrices.push(normalizeLatestPrice(rawPrice));
         } catch (error) {
@@ -101,45 +127,90 @@ export class LatestPricingSyncService {
       );
       const prepared = prepareLatestPriceUpserts(normalizedPrices, itemLookup, marketLookup);
       const persisted = await this.latestPriceRepository.upsertMany(prepared.ready);
-      const failed = errors.length + prepared.skippedCount;
+      const invalidRows = errors.length;
+      const totalIgnored =
+        prepared.skippedCount +
+        fetchResult.summary.skippedTargets +
+        fetchResult.summary.truncatedTargets;
+      const failed = invalidRows + totalIgnored;
       const status = failed > 0 ? SyncStatus.PARTIAL : SyncStatus.SUCCESS;
+      const durationMs = Date.now() - startedAt;
+      const errorSummaryParts = [
+        ...errors,
+        ...prepared.missingItems,
+        ...providerWarnings.map((warning) => warning.message),
+      ];
 
       await this.syncRunRepository.completeRun({
-        errorSummary:
-          failed > 0
-            ? [...errors, ...prepared.missingItems].slice(0, 5).join(" | ")
-            : undefined,
+        errorSummary: errorSummaryParts.length > 0 ? errorSummaryParts.slice(0, 5).join(" | ") : undefined,
         id: syncRun.id,
         itemsFailed: failed,
         itemsProcessed: totalReceived,
         itemsSucceeded: persisted.totalPersisted,
         metadata: {
+          durationMs,
           errors,
+          invalidRows,
           marketsCreated: marketWrite.created,
           marketsUpdated: marketWrite.updated,
           missingItems: prepared.missingItems,
+          providerSummary: fetchResult.summary,
+          totalIgnored,
+          totalMapped: normalizedPrices.length,
           upsertedRows: persisted.totalPersisted,
         },
         status,
       });
 
+      const logContext = {
+        durationMs,
+        failed,
+        invalidRows,
+        mapped: normalizedPrices.length,
+        persisted: persisted.totalPersisted,
+        provider: this.provider.provider,
+        received: totalReceived,
+        skipped: totalIgnored,
+      };
+
+      if (status === SyncStatus.SUCCESS) {
+        logger.info("Latest prices sync completed successfully.", logContext);
+      } else {
+        logger.warn("Latest prices sync completed with partial issues.", logContext);
+      }
+
       return {
         created: persisted.created,
+        durationMs,
         errors,
         failed,
+        invalidRows,
         marketsCreated: marketWrite.created,
         marketsUpdated: marketWrite.updated,
         missingItems: prepared.missingItems,
         provider: this.provider.provider,
+        providerWarnings,
+        requestedTargets: targets.length,
         skippedMissingItems: prepared.skippedCount,
         status,
         syncRunId: syncRun.id,
+        totalAttemptedTargets: attemptedTargets,
+        totalIgnored,
+        totalMapped: normalizedPrices.length,
         totalPersisted: persisted.totalPersisted,
         totalReceived,
         updated: persisted.updated,
       };
     } catch (error) {
       const errorMessage = toErrorMessage(error);
+      const durationMs = Date.now() - startedAt;
+
+      logger.error("Latest prices sync failed.", {
+        durationMs,
+        error: errorMessage,
+        provider: this.provider.provider,
+        received: totalReceived,
+      });
 
       await this.syncRunRepository.failRun({
         errorSummary: errorMessage,
@@ -147,7 +218,11 @@ export class LatestPricingSyncService {
         itemsFailed: totalReceived,
         itemsProcessed: totalReceived,
         metadata: {
+          attemptedTargets,
+          durationMs,
           provider: this.provider.provider,
+          requestedTargets: targets.length,
+          warnings: providerWarnings,
         },
       });
 
@@ -155,4 +230,3 @@ export class LatestPricingSyncService {
     }
   }
 }
-

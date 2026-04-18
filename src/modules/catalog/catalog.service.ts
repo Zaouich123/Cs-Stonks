@@ -1,5 +1,6 @@
 import { SyncStatus, SyncType } from "@prisma/client";
 
+import { logger } from "@/lib/logger";
 import type { CatalogProvider } from "@/modules/providers/provider.types";
 import { normalizeCatalogItem } from "@/modules/catalog/catalog.normalizer";
 import type { CatalogSyncResult, ItemRepository } from "@/modules/catalog/catalog.types";
@@ -17,9 +18,14 @@ export class CatalogSyncService {
   ) {}
 
   async syncCatalog(): Promise<CatalogSyncResult> {
+    const startedAt = Date.now();
     const syncRun = await this.syncRunRepository.startRun({
       provider: this.provider.provider,
       syncType: SyncType.CATALOG,
+    });
+
+    logger.info("Catalog sync started.", {
+      provider: this.provider.provider,
     });
 
     let totalReceived = 0;
@@ -41,6 +47,7 @@ export class CatalogSyncService {
 
       const persisted = await this.itemRepository.upsertMany(normalizedItems);
       const status = errors.length > 0 ? SyncStatus.PARTIAL : SyncStatus.SUCCESS;
+      const durationMs = Date.now() - startedAt;
 
       await this.syncRunRepository.completeRun({
         errorSummary: errors.length > 0 ? errors.slice(0, 5).join(" | ") : undefined,
@@ -50,11 +57,26 @@ export class CatalogSyncService {
         itemsSucceeded: persisted.totalPersisted,
         metadata: {
           created: persisted.created,
+          durationMs,
           errors,
           updated: persisted.updated,
         },
         status,
       });
+
+      const logContext = {
+        durationMs,
+        failed: errors.length,
+        persisted: persisted.totalPersisted,
+        provider: this.provider.provider,
+        received: totalReceived,
+      };
+
+      if (status === SyncStatus.SUCCESS) {
+        logger.info("Catalog sync completed successfully.", logContext);
+      } else {
+        logger.warn("Catalog sync completed with partial issues.", logContext);
+      }
 
       return {
         created: persisted.created,
@@ -69,6 +91,14 @@ export class CatalogSyncService {
       };
     } catch (error) {
       const errorMessage = toErrorMessage(error);
+      const durationMs = Date.now() - startedAt;
+
+      logger.error("Catalog sync failed.", {
+        durationMs,
+        error: errorMessage,
+        provider: this.provider.provider,
+        received: totalReceived,
+      });
 
       await this.syncRunRepository.failRun({
         errorSummary: errorMessage,
@@ -76,6 +106,7 @@ export class CatalogSyncService {
         itemsFailed: totalReceived,
         itemsProcessed: totalReceived,
         metadata: {
+          durationMs,
           provider: this.provider.provider,
         },
       });
@@ -84,4 +115,3 @@ export class CatalogSyncService {
     }
   }
 }
-

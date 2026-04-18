@@ -6,6 +6,7 @@ import type {
   ItemRepository,
   NormalizedCatalogItem,
 } from "@/modules/catalog/catalog.types";
+import type { PriceSyncTargetItem } from "@/modules/providers/provider.types";
 
 function dedupeItems(items: NormalizedCatalogItem[]) {
   const map = new Map<string, NormalizedCatalogItem>();
@@ -48,6 +49,39 @@ export class PrismaItemRepository implements ItemRepository {
     return new Map(items.map((item) => [item.variantKey, item]));
   }
 
+  async listPriceSyncTargets(): Promise<PriceSyncTargetItem[]> {
+    const items = await this.prisma.item.findMany({
+      orderBy: [
+        {
+          itemType: "asc",
+        },
+        {
+          displayName: "asc",
+        },
+      ],
+      select: {
+        displayName: true,
+        id: true,
+        marketHashName: true,
+        phase: true,
+        slug: true,
+        variantKey: true,
+      },
+      where: {
+        isActive: true,
+      },
+    });
+
+    return items.map((item) => ({
+      displayName: item.displayName,
+      itemId: item.id,
+      marketHashName: item.marketHashName,
+      phase: item.phase,
+      slug: item.slug,
+      variantKey: item.variantKey,
+    }));
+  }
+
   async upsertMany(items: NormalizedCatalogItem[]): Promise<CatalogWriteResult> {
     const uniqueItems = dedupeItems(items);
 
@@ -85,7 +119,9 @@ export class PrismaItemRepository implements ItemRepository {
             marketHashName: item.marketHashName,
             phase: item.phase,
             rarity: item.rarity,
+            searchText: item.searchText,
             skinName: item.skinName,
+            slug: item.slug,
             souvenir: item.souvenir,
             stattrak: item.stattrak,
             steamImageUrl: item.steamImageUrl,
@@ -102,7 +138,9 @@ export class PrismaItemRepository implements ItemRepository {
             marketHashName: item.marketHashName,
             phase: item.phase,
             rarity: item.rarity,
+            searchText: item.searchText,
             skinName: item.skinName,
+            slug: item.slug,
             souvenir: item.souvenir,
             stattrak: item.stattrak,
             steamImageUrl: item.steamImageUrl,
@@ -142,4 +180,3 @@ export class PrismaItemRepository implements ItemRepository {
     };
   }
 }
-
