@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="fr"
       className={`${headingFont.variable} ${monoFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[color:var(--color-surface)] text-[color:var(--color-ink)]">
+      <body className="min-h-full">
         {children}
       </body>
     </html>
