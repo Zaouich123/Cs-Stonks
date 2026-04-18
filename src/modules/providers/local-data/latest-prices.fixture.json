@@ -1,0 +1,169 @@
+[
+  {
+    "marketHashName": "AK-47 | Redline (Field-Tested)",
+    "price": 25.4,
+    "currency": "USD",
+    "quantity": 124,
+    "volume": 92,
+    "fetchedAt": "2026-04-18T08:30:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:28:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "AK-47 | Redline (Field-Tested)",
+    "price": 24.95,
+    "currency": "USD",
+    "quantity": 14,
+    "volume": 9,
+    "fetchedAt": "2026-04-18T08:31:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:27:00.000Z",
+    "market": {
+      "slug": "skinport",
+      "name": "Skinport",
+      "priority": 80,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "StatTrak AK-47 | Redline (Field-Tested)",
+    "price": 84.1,
+    "currency": "USD",
+    "quantity": 5,
+    "volume": 3,
+    "fetchedAt": "2026-04-18T08:32:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:29:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "AWP | Asiimov (Battle-Scarred)",
+    "price": 101.5,
+    "currency": "USD",
+    "quantity": null,
+    "volume": 17,
+    "fetchedAt": "2026-04-18T08:33:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:20:00.000Z",
+    "market": {
+      "slug": "csfloat",
+      "name": "CSFloat",
+      "priority": 70,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "AWP | Asiimov (Battle-Scarred)",
+    "price": 99.9,
+    "currency": "USD",
+    "quantity": 7,
+    "volume": 5,
+    "fetchedAt": "2026-04-18T08:34:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:19:00.000Z",
+    "market": {
+      "slug": "skinport",
+      "name": "Skinport",
+      "priority": 80,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "Sticker | Titan (Holo) | Katowice 2014",
+    "price": 78500,
+    "currency": "USD",
+    "quantity": 2,
+    "volume": null,
+    "fetchedAt": "2026-04-18T08:35:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:10:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "DreamHack 2014 Legends Capsule",
+    "price": 18.5,
+    "currency": "USD",
+    "quantity": 88,
+    "volume": 120,
+    "fetchedAt": "2026-04-18T08:36:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:11:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "Operation Phoenix Weapon Case",
+    "price": 4.25,
+    "currency": "USD",
+    "quantity": 512,
+    "volume": 803,
+    "fetchedAt": "2026-04-18T08:37:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:12:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "Karambit | Doppler (Factory New)",
+    "phase": "Phase 2",
+    "price": 2410,
+    "currency": "USD",
+    "quantity": 1,
+    "volume": null,
+    "fetchedAt": "2026-04-18T08:38:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:13:00.000Z",
+    "market": {
+      "slug": "skinport",
+      "name": "Skinport",
+      "priority": 80,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "Sport Gloves | Vice (Minimal Wear)",
+    "price": 866.75,
+    "currency": "USD",
+    "quantity": 3,
+    "volume": 2,
+    "fetchedAt": "2026-04-18T08:39:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:14:00.000Z",
+    "market": {
+      "slug": "csfloat",
+      "name": "CSFloat",
+      "priority": 70,
+      "enabled": true
+    }
+  },
+  {
+    "marketHashName": "Lt. Commander Ricksaw | NSWC SEAL",
+    "price": 14.8,
+    "currency": "USD",
+    "quantity": null,
+    "volume": 36,
+    "fetchedAt": "2026-04-18T08:40:00.000Z",
+    "sourceUpdatedAt": "2026-04-18T08:15:00.000Z",
+    "market": {
+      "slug": "steam",
+      "name": "Steam Community Market",
+      "priority": 100,
+      "enabled": true
+    }
+  }
+]
+
