@@ -1,0 +1,19 @@
+
+> cs-stonks@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.142:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1327ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1005ms (1460 modules)
+ GET / 200 in 3347ms
+ ✓ Compiled in 401ms (663 modules)
+ ✓ Compiled in 137ms (663 modules)
+ ✓ Compiled in 164ms (1460 modules)
+ ✓ Compiled in 144ms (663 modules)
+ ✓ Compiled in 161ms (663 modules)
