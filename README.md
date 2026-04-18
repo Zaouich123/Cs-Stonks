@@ -10,6 +10,13 @@ Le sprint 2 ajoute :
 - un read side public pour les items, les prix courants et l'historique
 - un catalogue enrichi avec `slug` et `searchText`
 
+Le sprint 3 ajoute :
+
+- un provider catalogue `bymykel` base sur `ByMykel/CSGO-API`
+- un import relancable du catalogue local complet ou quasi complet
+- l'enrichissement image Steam/CDN stocke en base
+- des metadonnees catalogue supplementaires sur `Item`
+
 ## Stack
 
 - Next.js `15.5.15`
@@ -53,6 +60,7 @@ prisma
   migrations
     0001_init
     0002_item_read_fields
+    20260418172954_sprint3_catalog_import
 ```
 
 ## Modele de donnees
@@ -70,6 +78,15 @@ Ajouts sprint 2 sur `Item` :
 - `slug`
 - `searchText`
 
+Ajouts sprint 3 sur `Item` :
+
+- `baseItemName`
+- `hasVariants`
+- `steamAppId`
+- `source`
+- `sourceExternalId`
+- `lastCatalogSyncAt`
+
 `LatestPrice` reste la source de verite quasi temps reel.
 `DailySnapshot` continue de copier `LatestPrice` sans aucun refetch provider.
 
@@ -77,6 +94,8 @@ Ajouts sprint 2 sur `Item` :
 
 ### Catalogue
 
+- `ByMykelCatalogProvider` via la source `bymykel`
+- `LocalFallbackCatalogProvider` via la source `local_fallback`
 - `MockCatalogProvider`
 - `JsonCatalogProvider`
 
@@ -85,6 +104,7 @@ Ajouts sprint 2 sur `Item` :
 - `MockPriceProvider`
 - `JsonPriceProvider`
 - `SteamPriceProvider` via la source `real`
+- `SkinportPriceProvider` via la source `skinport`
 
 Le provider reel :
 
@@ -148,6 +168,9 @@ Variables principales :
 
 - `DATABASE_URL`
 - `SHADOW_DATABASE_URL`
+- `CATALOG_PROVIDER`
+- `BYMYKEL_API_BASE_URL`
+- `BYMYKEL_API_LOCALE`
 - `PRICE_PROVIDER`
 - `ENABLE_INTERNAL_CRON`
 - `CATALOG_CRON`
@@ -158,6 +181,12 @@ Variables principales :
 
 Variables du provider reel :
 
+- `SKINPORT_BASE_URL`
+- `SKINPORT_APP_ID`
+- `SKINPORT_CURRENCY`
+- `SKINPORT_CHUNK_SIZE`
+- `SKINPORT_FETCH_ALL_SALES_HISTORY`
+
 - `REAL_PROVIDER_BASE_URL`
 - `REAL_PROVIDER_APP_ID`
 - `REAL_PROVIDER_COUNTRY`
@@ -167,7 +196,63 @@ Variables du provider reel :
 - `REAL_PROVIDER_CONCURRENCY`
 - `REAL_PROVIDER_MAX_ITEMS`
 
+Par defaut, `CATALOG_PROVIDER="bymykel"` et `PRICE_PROVIDER="json"`.
+Pour utiliser le fallback local catalogue :
+
+```bash
+CATALOG_PROVIDER=local_fallback
+```
+
+Pour utiliser le provider catalogue reel :
+
+```bash
+CATALOG_PROVIDER=bymykel
+```
+
+Le provider ByMykel importe :
+
+- `skins_not_grouped.json`
+- `stickers.json`
+- `crates.json`
+- `agents.json`
+- `keychains.json`
+- `tools.json`
+- `music_kits.json`
+- `graffiti.json`
+- `patches.json`
+
+et mappe les types internes :
+
+- `SKIN`
+- `KNIFE`
+- `GLOVE`
+- `STICKER`
+- `CASE`
+- `CAPSULE`
+- `AGENT`
+- `CHARM`
+- `TOOL`
+- `MUSIC_KIT`
+- `GRAFFITI`
+- `PATCH`
+
+Les URLs d'images sont resolues et stockees dans `imageUrl` et `steamImageUrl`.
+
 Par defaut, `PRICE_PROVIDER="json"`.
+Pour utiliser Skinport :
+
+```bash
+PRICE_PROVIDER=skinport
+```
+
+Le provider Skinport :
+
+- utilise `GET /v1/sales/history`
+- ne demande pas d'API key pour cette sync publique
+- envoie `Accept-Encoding: br` comme demande par la doc officielle
+- choisit un prix a partir de `last_24_hours.median`, puis fallback sur `avg`, puis `7d`, `30d`, `90d`
+- persiste le market `skinport`
+
 Pour utiliser le vrai provider :
 
 ```bash
@@ -185,22 +270,37 @@ curl http://localhost:3000/api/internal/health
 ### Sync catalogue
 
 ```bash
-curl -X POST http://localhost:3000/api/internal/sync/catalog \
+curl -X POST http://localhost:3000/api/internal/catalog/import \
   -H "Content-Type: application/json" \
-  -d "{\"source\":\"json\"}"
+  -d "{\"source\":\"bymykel\"}"
 ```
 
 Sources catalogue :
 
+- `bymykel`
+- `local_fallback`
 - `json`
 - `mock`
+
+Alias legacy toujours disponibles :
+
+- `POST /api/internal/catalog/sync`
+- `POST /api/internal/sync/catalog`
+
+### Refresh images catalogue
+
+```bash
+curl -X POST http://localhost:3000/api/internal/catalog/refresh-images \
+  -H "Content-Type: application/json" \
+  -d "{\"source\":\"bymykel\"}"
+```
 
 ### Sync derniers prix
 
 ```bash
 curl -X POST http://localhost:3000/api/internal/sync/prices \
   -H "Content-Type: application/json" \
-  -d "{\"source\":\"real\"}"
+  -d "{\"source\":\"skinport\"}"
 ```
 
 Sources prix :
@@ -208,6 +308,7 @@ Sources prix :
 - `json`
 - `mock`
 - `real`
+- `skinport`
 
 Si `source` est omise, la route prend `PRICE_PROVIDER`.
 
@@ -278,6 +379,7 @@ L'historique vient de `DailySnapshot` et est pret pour les futurs charts :
 Scripts manuels :
 
 - `npm run job:catalog`
+- `npm run job:catalog:refresh-images`
 - `npm run job:prices`
 - `npm run job:snapshot`
 - `npm run jobs:scheduler`

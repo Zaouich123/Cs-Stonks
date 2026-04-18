@@ -6,25 +6,23 @@ import {
   type CatalogProviderSource,
 } from "@/modules/providers/provider.types";
 
-export async function runCatalogSyncJob(
+export async function runCatalogImageRefreshJob(
   source: CatalogProviderSource = resolveCatalogProviderSource(process.env.CATALOG_PROVIDER, "bymykel"),
 ) {
   const result = await createCatalogSyncService(source).syncCatalog();
 
-  logger.info("Catalog sync job completed.", {
-    created: result.created,
+  logger.info("Catalog image refresh job completed.", {
     failed: result.failed,
     imagesMissing: result.imagesMissing,
     imagesResolved: result.imagesResolved,
     source,
-    updated: result.updated,
   });
 
   return result;
 }
 
 if (isDirectExecution(import.meta.url)) {
-  runCatalogSyncJob()
+  runCatalogImageRefreshJob()
     .then((result) => {
       console.log(JSON.stringify(result, null, 2));
     })

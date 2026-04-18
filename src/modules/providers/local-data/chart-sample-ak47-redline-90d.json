@@ -1,0 +1,649 @@
+{
+  "sample": true,
+  "description": "Synthetic 90-day daily price series for frontend chart testing.",
+  "item": {
+    "displayName": "AK-47 | Redline (Field-Tested)",
+    "marketHashName": "AK-47 | Redline (Field-Tested)",
+    "itemType": "SKIN",
+    "marketSlug": "skinport",
+    "currency": "USD"
+  },
+  "range": {
+    "from": "2026-01-19",
+    "to": "2026-04-18",
+    "days": 90,
+    "granularity": "day"
+  },
+  "series": [
+    {
+      "date": "2026-01-19",
+      "price": 35.54,
+      "volume": 18,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-20",
+      "price": 35.99,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-21",
+      "price": 36.43,
+      "volume": 22,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-22",
+      "price": 36.85,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-23",
+      "price": 37.26,
+      "volume": 26,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-24",
+      "price": 37.64,
+      "volume": 28,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-25",
+      "price": 37.99,
+      "volume": 30,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-26",
+      "price": 37.47,
+      "volume": 31,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-27",
+      "price": 37.76,
+      "volume": 32,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-28",
+      "price": 38.01,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-29",
+      "price": 38.22,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-30",
+      "price": 38.39,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-01-31",
+      "price": 38.52,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-01",
+      "price": 38.61,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-02",
+      "price": 37.81,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-03",
+      "price": 37.82,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-04",
+      "price": 37.79,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-05",
+      "price": 37.72,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-06",
+      "price": 37.62,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-07",
+      "price": 37.49,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-08",
+      "price": 37.33,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-09",
+      "price": 36.31,
+      "volume": 16,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-10",
+      "price": 36.11,
+      "volume": 16,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-11",
+      "price": 35.9,
+      "volume": 17,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-12",
+      "price": 35.68,
+      "volume": 18,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-13",
+      "price": 35.46,
+      "volume": 19,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-14",
+      "price": 35.23,
+      "volume": 21,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-15",
+      "price": 35.02,
+      "volume": 13,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-16",
+      "price": 33.97,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-17",
+      "price": 33.79,
+      "volume": 17,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-18",
+      "price": 33.62,
+      "volume": 19,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-19",
+      "price": 33.48,
+      "volume": 22,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-20",
+      "price": 33.37,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-21",
+      "price": 33.29,
+      "volume": 26,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-22",
+      "price": 33.25,
+      "volume": 28,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-23",
+      "price": 32.41,
+      "volume": 30,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-24",
+      "price": 32.45,
+      "volume": 23,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-25",
+      "price": 32.53,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-26",
+      "price": 32.66,
+      "volume": 26,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-27",
+      "price": 32.83,
+      "volume": 27,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-02-28",
+      "price": 33.04,
+      "volume": 28,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-01",
+      "price": 33.3,
+      "volume": 29,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-02",
+      "price": 32.75,
+      "volume": 29,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-03",
+      "price": 33.09,
+      "volume": 29,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-04",
+      "price": 33.46,
+      "volume": 30,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-05",
+      "price": 33.86,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-06",
+      "price": 34.3,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-07",
+      "price": 34.75,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-08",
+      "price": 35.23,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-09",
+      "price": 34.89,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-10",
+      "price": 35.39,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-11",
+      "price": 35.9,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-12",
+      "price": 36.42,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-13",
+      "price": 36.93,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-14",
+      "price": 37.43,
+      "volume": 12,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-15",
+      "price": 37.91,
+      "volume": 13,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-16",
+      "price": 37.54,
+      "volume": 14,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-17",
+      "price": 37.99,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-18",
+      "price": 38.41,
+      "volume": 17,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-19",
+      "price": 38.8,
+      "volume": 19,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-20",
+      "price": 39.16,
+      "volume": 21,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-21",
+      "price": 39.49,
+      "volume": 23,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-22",
+      "price": 39.78,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-23",
+      "price": 39.19,
+      "volume": 18,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-24",
+      "price": 39.4,
+      "volume": 20,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-25",
+      "price": 39.58,
+      "volume": 23,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-26",
+      "price": 39.72,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-27",
+      "price": 39.82,
+      "volume": 26,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-28",
+      "price": 39.88,
+      "volume": 28,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-29",
+      "price": 39.91,
+      "volume": 30,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-30",
+      "price": 39.07,
+      "volume": 31,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-03-31",
+      "price": 39.05,
+      "volume": 32,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-01",
+      "price": 39,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-02",
+      "price": 38.93,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-03",
+      "price": 38.84,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-04",
+      "price": 38.74,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-05",
+      "price": 38.64,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-06",
+      "price": 37.69,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-07",
+      "price": 37.58,
+      "volume": 25,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-08",
+      "price": 37.48,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-09",
+      "price": 37.39,
+      "volume": 24,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-10",
+      "price": 37.31,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-11",
+      "price": 37.25,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-12",
+      "price": 37.21,
+      "volume": 15,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-13",
+      "price": 36.35,
+      "volume": 16,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-14",
+      "price": 36.36,
+      "volume": 16,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-15",
+      "price": 36.4,
+      "volume": 17,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-16",
+      "price": 36.47,
+      "volume": 18,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-17",
+      "price": 36.57,
+      "volume": 19,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    },
+    {
+      "date": "2026-04-18",
+      "price": 36.71,
+      "volume": 21,
+      "currency": "USD",
+      "marketSlug": "skinport"
+    }
+  ]
+}

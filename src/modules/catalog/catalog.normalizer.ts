@@ -5,17 +5,23 @@ import type { NormalizedCatalogItem } from "@/modules/catalog/catalog.types";
 import type { RawCatalogProviderItem } from "@/modules/providers/provider.types";
 
 const catalogItemSchema = z.object({
+  baseItemName: z.string().trim().min(1).nullable().optional(),
   collection: z.string().trim().min(1).nullable().optional(),
   displayName: z.string().trim().min(1).nullable().optional(),
   exterior: z.string().trim().min(1).nullable().optional(),
+  hasVariants: z.boolean().nullable().optional(),
   imageUrl: z.string().trim().url().nullable().optional(),
   itemType: z.string().trim().min(1),
+  lastCatalogSyncAt: z.string().datetime().nullable().optional(),
   marketHashName: z.string().trim().min(1),
   phase: z.string().trim().min(1).nullable().optional(),
   rarity: z.string().trim().min(1).nullable().optional(),
   skinName: z.string().trim().min(1).nullable().optional(),
+  source: z.string().trim().min(1).nullable().optional(),
+  sourceExternalId: z.string().trim().min(1).nullable().optional(),
   souvenir: z.boolean().nullable().optional(),
   stattrak: z.boolean().nullable().optional(),
+  steamAppId: z.number().int().positive().nullable().optional(),
   steamImageUrl: z.string().trim().url().nullable().optional(),
   weapon: z.string().trim().min(1).nullable().optional(),
 });
@@ -27,9 +33,13 @@ const itemTypeMap: Record<string, ItemType> = {
   charm: ItemType.CHARM,
   glove: ItemType.GLOVE,
   knife: ItemType.KNIFE,
+  graffiti: ItemType.GRAFFITI,
+  music_kit: ItemType.MUSIC_KIT,
   other: ItemType.OTHER,
+  patch: ItemType.PATCH,
   skin: ItemType.SKIN,
   sticker: ItemType.STICKER,
+  tool: ItemType.TOOL,
 };
 
 const exteriorPattern = /\(([^)]+)\)\s*$/;
@@ -68,6 +78,29 @@ function resolveItemType(itemType: string): ItemType {
   }
 
   return resolvedType;
+}
+
+function inferBaseItemName(
+  marketHashName: string,
+  displayName: string,
+  explicitBaseItemName?: string | null,
+): string | null {
+  const normalizedBaseItemName = asNullableString(explicitBaseItemName);
+
+  if (normalizedBaseItemName) {
+    return normalizedBaseItemName;
+  }
+
+  const withoutPrefix = marketHashName
+    .replace(/^StatTrak(?:\u2122)?\s+/i, "")
+    .replace(/^Souvenir\s+/i, "");
+  const inferred = withoutPrefix.replace(exteriorPattern, "").trim();
+
+  if (inferred.length === 0 || inferred === displayName) {
+    return null;
+  }
+
+  return inferred;
 }
 
 export function normalizeSearchText(value: string): string {
@@ -132,20 +165,29 @@ export function normalizeCatalogItem(rawItem: RawCatalogProviderItem): Normalize
   const exterior = inferExterior(marketHashName, item.exterior);
   const stattrak = item.stattrak ?? marketHashName.includes("StatTrak");
   const souvenir = item.souvenir ?? marketHashName.includes("Souvenir");
+  const baseItemName = inferBaseItemName(marketHashName, displayName, item.baseItemName);
+  const hasVariants =
+    item.hasVariants ?? Boolean(exterior || stattrak || souvenir || phase || baseItemName);
   const normalizedItem = {
+    baseItemName,
     collection: asNullableString(item.collection),
     displayName,
     exterior,
+    hasVariants,
     imageUrl: asNullableString(item.imageUrl),
     isActive: true,
     itemType,
+    lastCatalogSyncAt: item.lastCatalogSyncAt ? new Date(item.lastCatalogSyncAt) : new Date(),
     marketHashName,
     phase,
     rarity: asNullableString(item.rarity),
     skinName: asNullableString(item.skinName),
     slug: buildItemSlug(marketHashName, phase),
+    source: asNullableString(item.source) ?? "unknown",
+    sourceExternalId: asNullableString(item.sourceExternalId),
     souvenir,
     stattrak,
+    steamAppId: item.steamAppId ?? 730,
     steamImageUrl: asNullableString(item.steamImageUrl),
     variantKey: buildItemVariantKey(marketHashName, phase),
     weapon: asNullableString(item.weapon),
