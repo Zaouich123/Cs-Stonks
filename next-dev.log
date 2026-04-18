@@ -17,3 +17,12 @@
  ✓ Compiled in 164ms (1460 modules)
  ✓ Compiled in 144ms (663 modules)
  ✓ Compiled in 161ms (663 modules)
+ ✓ Compiled in 102ms (663 modules)
+ ✓ Compiled in 107ms (663 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\etien\OneDrive\Desktop\Cs-Stonks\.next\cache\webpack\client-development\0.pack.gz_' -> 'C:\Users\etien\OneDrive\Desktop\Cs-Stonks\.next\cache\webpack\client-development\0.pack.gz'
+ ✓ Compiled in 93ms (663 modules)
+ ✓ Compiled in 112ms (663 modules)
+ ✓ Compiled in 106ms (663 modules)
+ ✓ Compiled in 94ms (663 modules)
+ ✓ Compiled in 95ms (663 modules)
+ ✓ Compiled in 93ms (649 modules)
