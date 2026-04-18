@@ -11,6 +11,7 @@ import { JsonPriceProvider } from "@/modules/providers/json-price.provider";
 import { LocalFallbackCatalogProvider } from "@/modules/providers/local-fallback-catalog.provider";
 import { MockCatalogProvider } from "@/modules/providers/mock-catalog.provider";
 import { MockPriceProvider } from "@/modules/providers/mock-price.provider";
+import { SkinportPriceProvider } from "@/modules/providers/skinport/skinport-price.provider";
 import {
   resolveCatalogProviderSource,
   resolvePriceProviderSource,
@@ -52,6 +53,8 @@ function createPriceProvider(source: PriceProviderSource): PriceProvider {
       return new MockPriceProvider();
     case "real":
       return new SteamPriceProvider();
+    case "skinport":
+      return new SkinportPriceProvider();
     default:
       return new JsonPriceProvider();
   }
