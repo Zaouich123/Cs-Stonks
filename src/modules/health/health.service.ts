@@ -2,6 +2,7 @@ import type { ItemRepository } from "@/modules/catalog/catalog.types";
 import { cronSchedules } from "@/modules/jobs/cron.config";
 import type { MarketRepository } from "@/modules/markets/market.types";
 import type { LatestPriceRepository } from "@/modules/pricing/pricing.types";
+import { resolvePriceProviderSource } from "@/modules/providers/provider.types";
 import type { SnapshotRepository } from "@/modules/snapshots/snapshot.types";
 import type { SyncRunRepository } from "@/modules/sync-runs/sync-run.types";
 
@@ -34,6 +35,8 @@ export class HealthQueryService {
       cron: cronSchedules,
       env: {
         internalCronEnabled: process.env.ENABLE_INTERNAL_CRON === "true",
+        priceProvider: resolvePriceProviderSource(process.env.PRICE_PROVIDER, "json"),
+        realProviderBaseUrl: process.env.REAL_PROVIDER_BASE_URL ?? "https://steamcommunity.com/market/",
       },
       status: "ok",
     };

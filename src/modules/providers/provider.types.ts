@@ -1,8 +1,17 @@
 export const catalogProviderSources = ["json", "mock"] as const;
-export const priceProviderSources = ["json", "mock"] as const;
+export const priceProviderSources = ["json", "mock", "real"] as const;
 
 export type CatalogProviderSource = (typeof catalogProviderSources)[number];
 export type PriceProviderSource = (typeof priceProviderSources)[number];
+
+export interface PriceSyncTargetItem {
+  displayName: string;
+  itemId: string;
+  marketHashName: string;
+  phase: string | null;
+  slug: string;
+  variantKey: string;
+}
 
 export interface RawCatalogProviderItem {
   collection?: string | null;
@@ -39,6 +48,31 @@ export interface RawPriceProviderItem {
   volume?: number | null;
 }
 
+export interface PriceProviderWarning {
+  code: string;
+  marketHashName?: string;
+  message: string;
+  variantKey?: string;
+}
+
+export interface PriceProviderFetchInput {
+  items: PriceSyncTargetItem[];
+}
+
+export interface PriceProviderFetchSummary {
+  attemptedTargets: number;
+  requestedTargets: number;
+  returnedRecords: number;
+  skippedTargets: number;
+  truncatedTargets: number;
+  warnings: PriceProviderWarning[];
+}
+
+export interface PriceProviderFetchResult {
+  items: RawPriceProviderItem[];
+  summary: PriceProviderFetchSummary;
+}
+
 export interface CatalogProvider {
   readonly provider: string;
   fetchCatalog(): Promise<RawCatalogProviderItem[]>;
@@ -46,6 +80,20 @@ export interface CatalogProvider {
 
 export interface PriceProvider {
   readonly provider: string;
-  fetchLatestPrices(): Promise<RawPriceProviderItem[]>;
+  fetchLatestPrices(input: PriceProviderFetchInput): Promise<PriceProviderFetchResult>;
 }
 
+export function isPriceProviderSource(value: string): value is PriceProviderSource {
+  return priceProviderSources.includes(value as PriceProviderSource);
+}
+
+export function resolvePriceProviderSource(
+  value?: string | null,
+  fallback: PriceProviderSource = "json",
+): PriceProviderSource {
+  if (!value) {
+    return fallback;
+  }
+
+  return isPriceProviderSource(value) ? value : fallback;
+}

@@ -1,7 +1,10 @@
-import { ItemType } from "@prisma/client";
-import { describe, expect, it } from "vitest";
+import { ItemType, SyncStatus } from "@prisma/client";
+import { describe, expect, it, vi } from "vitest";
 
-import { prepareLatestPriceUpserts } from "@/modules/pricing/pricing.service";
+import {
+  LatestPricingSyncService,
+  prepareLatestPriceUpserts,
+} from "@/modules/pricing/pricing.service";
 
 describe("pricing.service", () => {
   it("deduplicates prices by item and market and keeps the latest fetch", () => {
@@ -119,5 +122,160 @@ describe("pricing.service", () => {
     expect(prepared.ready).toEqual([]);
     expect(prepared.missingItems).toEqual(["Missing Item"]);
     expect(prepared.skippedCount).toBe(1);
+  });
+
+  it("returns a rich partial summary when provider warnings and missing items occur", async () => {
+    const provider = {
+      fetchLatestPrices: vi.fn(async () => ({
+        items: [
+          {
+            currency: "USD",
+            fetchedAt: "2026-04-18T08:40:00.000Z",
+            market: {
+              enabled: true,
+              name: "Steam Community Market",
+              priority: 100,
+              slug: "steam",
+            },
+            marketHashName: "AK-47 | Redline (Field-Tested)",
+            phase: null,
+            price: 25.4,
+            quantity: 124,
+            sourceUpdatedAt: "2026-04-18T08:39:00.000Z",
+            volume: 92,
+          },
+          {
+            currency: "USD",
+            fetchedAt: "2026-04-18T08:41:00.000Z",
+            market: {
+              enabled: true,
+              name: "Steam Community Market",
+              priority: 100,
+              slug: "steam",
+            },
+            marketHashName: "Missing Item",
+            phase: null,
+            price: 99,
+            quantity: null,
+            sourceUpdatedAt: null,
+            volume: null,
+          },
+        ],
+        summary: {
+          attemptedTargets: 2,
+          requestedTargets: 2,
+          returnedRecords: 2,
+          skippedTargets: 1,
+          truncatedTargets: 0,
+          warnings: [
+            {
+              code: "NO_ACTIVE_LISTING",
+              marketHashName: "AWP | Asiimov (Battle-Scarred)",
+              message: "No active listing found.",
+              variantKey: "AWP | Asiimov (Battle-Scarred)",
+            },
+          ],
+        },
+      })),
+      provider: "csfloat_price_provider",
+    };
+    const itemRepository = {
+      findByVariantKeys: vi.fn(async () =>
+        new Map([
+          [
+            "AK-47 | Redline (Field-Tested)",
+            {
+              displayName: "AK-47 | Redline (Field-Tested)",
+              id: "item_1",
+              itemType: ItemType.SKIN,
+              marketHashName: "AK-47 | Redline (Field-Tested)",
+              phase: null,
+              variantKey: "AK-47 | Redline (Field-Tested)",
+            },
+          ],
+        ]),
+      ),
+      listPriceSyncTargets: vi.fn(async () => [
+        {
+          displayName: "AK-47 | Redline (Field-Tested)",
+          itemId: "item_1",
+          marketHashName: "AK-47 | Redline (Field-Tested)",
+          phase: null,
+          slug: "ak-47-redline-field-tested",
+          variantKey: "AK-47 | Redline (Field-Tested)",
+        },
+        {
+          displayName: "Missing Item",
+          itemId: "item_missing",
+          marketHashName: "Missing Item",
+          phase: null,
+          slug: "missing-item",
+          variantKey: "Missing Item",
+        },
+      ]),
+    };
+    const marketRepository = {
+      count: vi.fn(),
+      findBySlugs: vi.fn(async () =>
+        new Map([
+          [
+            "steam",
+            {
+              id: "market_1",
+              name: "Steam Community Market",
+              slug: "steam",
+            },
+          ],
+        ]),
+      ),
+      upsertMany: vi.fn(async () => ({
+        created: 1,
+        markets: [
+          {
+            id: "market_1",
+            name: "Steam Community Market",
+            slug: "steam",
+          },
+        ],
+        totalPersisted: 1,
+        updated: 0,
+      })),
+    };
+    const latestPriceRepository = {
+      count: vi.fn(),
+      listLatestPrices: vi.fn(),
+      upsertMany: vi.fn(async () => ({
+        created: 1,
+        totalPersisted: 1,
+        updated: 0,
+      })),
+    };
+    const syncRunRepository = {
+      completeRun: vi.fn(async () => undefined),
+      count: vi.fn(),
+      failRun: vi.fn(async () => undefined),
+      startRun: vi.fn(async () => ({
+        id: "sync_run_1",
+      })),
+    };
+
+    const service = new LatestPricingSyncService(
+      provider,
+      itemRepository,
+      marketRepository,
+      latestPriceRepository,
+      syncRunRepository,
+    );
+
+    const result = await service.syncLatestPrices();
+
+    expect(result.status).toBe(SyncStatus.PARTIAL);
+    expect(result.totalMapped).toBe(2);
+    expect(result.totalIgnored).toBe(2);
+    expect(result.failed).toBe(2);
+    expect(result.skippedMissingItems).toBe(1);
+    expect(result.providerWarnings).toHaveLength(1);
+    expect(result.totalPersisted).toBe(1);
+    expect(syncRunRepository.completeRun).toHaveBeenCalledOnce();
   });
 });

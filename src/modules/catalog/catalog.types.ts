@@ -1,5 +1,7 @@
 import type { ItemType, SyncStatus } from "@prisma/client";
 
+import type { PriceSyncTargetItem } from "@/modules/providers/provider.types";
+
 export interface ItemLookup {
   displayName: string;
   id: string;
@@ -19,7 +21,9 @@ export interface NormalizedCatalogItem {
   marketHashName: string;
   phase: string | null;
   rarity: string | null;
+  searchText: string;
   skinName: string | null;
+  slug: string;
   souvenir: boolean;
   stattrak: boolean;
   steamImageUrl: string | null;
@@ -49,6 +53,6 @@ export interface CatalogSyncResult {
 export interface ItemRepository {
   count(): Promise<number>;
   findByVariantKeys(keys: string[]): Promise<Map<string, ItemLookup>>;
+  listPriceSyncTargets(): Promise<PriceSyncTargetItem[]>;
   upsertMany(items: NormalizedCatalogItem[]): Promise<CatalogWriteResult>;
 }
-
