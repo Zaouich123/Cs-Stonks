@@ -1,0 +1,338 @@
+{
+    "healthBefore":  {
+                         "ok":  true,
+                         "data":  {
+                                      "counts":  {
+                                                     "dailySnapshots":  0,
+                                                     "items":  0,
+                                                     "latestPrices":  0,
+                                                     "markets":  0,
+                                                     "syncRuns":  0
+                                                 },
+                                      "cron":  {
+                                                   "catalog":  {
+                                                                   "description":  "Catalog sync at low frequency.",
+                                                                   "expression":  "0 3 * * *",
+                                                                   "recommendation":  "Daily at 03:00 Europe/Paris or manual on MVP.",
+                                                                   "timezone":  "Europe/Paris"
+                                                               },
+                                                   "latestPrices":  {
+                                                                        "description":  "Latest prices sync on a medium cadence.",
+                                                                        "expression":  "0 * * * *",
+                                                                        "recommendation":  "Hourly for the sprint MVP.",
+                                                                        "timezone":  "Europe/Paris"
+                                                                    },
+                                                   "snapshot":  {
+                                                                    "description":  "Daily snapshot at a fixed logical hour without fetching providers.",
+                                                                    "expression":  "5 2 * * *",
+                                                                    "recommendation":  "Daily at 02:05 Europe/Paris.",
+                                                                    "snapshotHour":  "02:05",
+                                                                    "timezone":  "Europe/Paris"
+                                                                }
+                                               },
+                                      "env":  {
+                                                  "internalCronEnabled":  false,
+                                                  "priceProvider":  "real",
+                                                  "realProviderBaseUrl":  "https://steamcommunity.com/market/"
+                                              },
+                                      "status":  "ok"
+                                  }
+                     },
+    "catalogSync":  {
+                        "ok":  true,
+                        "data":  {
+                                     "created":  9,
+                                     "errors":  [
+
+                                                ],
+                                     "failed":  0,
+                                     "provider":  "json_catalog_provider",
+                                     "status":  "SUCCESS",
+                                     "syncRunId":  "cmo4eovjd0000lszkrpx5yf21",
+                                     "totalPersisted":  9,
+                                     "totalReceived":  9,
+                                     "updated":  0
+                                 }
+                    },
+    "pricesSync":  {
+                       "ok":  true,
+                       "data":  {
+                                    "created":  4,
+                                    "durationMs":  997,
+                                    "errors":  [
+
+                                               ],
+                                    "failed":  5,
+                                    "invalidRows":  0,
+                                    "marketsCreated":  1,
+                                    "marketsUpdated":  0,
+                                    "missingItems":  [
+
+                                                     ],
+                                    "provider":  "steam_market_price_provider",
+                                    "providerWarnings":  [
+                                                             {
+                                                                 "code":  "NO_ACTIVE_PRICE",
+                                                                 "marketHashName":  "StatTrak AK-47 | Redline (Field-Tested)",
+                                                                 "message":  "No public Steam price found for \"StatTrak AK-47 | Redline (Field-Tested)\".",
+                                                                 "variantKey":  "StatTrak AK-47 | Redline (Field-Tested)"
+                                                             },
+                                                             {
+                                                                 "code":  "NO_ACTIVE_PRICE",
+                                                                 "marketHashName":  "Sticker | Titan (Holo) | Katowice 2014",
+                                                                 "message":  "No public Steam price found for \"Sticker | Titan (Holo) | Katowice 2014\".",
+                                                                 "variantKey":  "Sticker | Titan (Holo) | Katowice 2014"
+                                                             },
+                                                             {
+                                                                 "code":  "NO_ACTIVE_PRICE",
+                                                                 "marketHashName":  "DreamHack 2014 Legends Capsule",
+                                                                 "message":  "No public Steam price found for \"DreamHack 2014 Legends Capsule\".",
+                                                                 "variantKey":  "DreamHack 2014 Legends Capsule"
+                                                             },
+                                                             {
+                                                                 "code":  "NO_ACTIVE_PRICE",
+                                                                 "marketHashName":  "Karambit | Doppler (Factory New)",
+                                                                 "message":  "No public Steam price found for \"Karambit | Doppler (Factory New)\".",
+                                                                 "variantKey":  "Karambit | Doppler (Factory New)::Phase 2"
+                                                             },
+                                                             {
+                                                                 "code":  "NO_ACTIVE_PRICE",
+                                                                 "marketHashName":  "Sport Gloves | Vice (Minimal Wear)",
+                                                                 "message":  "No public Steam price found for \"Sport Gloves | Vice (Minimal Wear)\".",
+                                                                 "variantKey":  "Sport Gloves | Vice (Minimal Wear)"
+                                                             }
+                                                         ],
+                                    "requestedTargets":  9,
+                                    "skippedMissingItems":  0,
+                                    "status":  "PARTIAL",
+                                    "syncRunId":  "cmo4eovqu000alszk7zut6i73",
+                                    "totalAttemptedTargets":  9,
+                                    "totalIgnored":  5,
+                                    "totalMapped":  4,
+                                    "totalPersisted":  4,
+                                    "totalReceived":  4,
+                                    "updated":  0
+                                }
+                   },
+    "itemsList":  {
+                      "ok":  true,
+                      "data":  {
+                                   "filters":  {
+                                                   "itemType":  null,
+                                                   "query":  "ak redline",
+                                                   "sort":  "displayName_asc"
+                                               },
+                                   "items":  [
+                                                 {
+                                                     "collection":  "Operation Phoenix Weapon Case",
+                                                     "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                     "displayName":  "AK-47 | Redline (Field-Tested)",
+                                                     "exterior":  "Field-Tested",
+                                                     "id":  "cmo4eovkm0001lszkwh5e1eid",
+                                                     "imageUrl":  "https://example.com/items/ak-redline.png",
+                                                     "isActive":  true,
+                                                     "itemType":  "SKIN",
+                                                     "latestPriceCount":  1,
+                                                     "lowestCurrentPrice":  46.93,
+                                                     "lowestCurrentPriceCurrency":  "USD",
+                                                     "marketHashName":  "AK-47 | Redline (Field-Tested)",
+                                                     "phase":  null,
+                                                     "rarity":  "Classified",
+                                                     "slug":  "ak-47-redline-field-tested",
+                                                     "steamImageUrl":  "https://steamcdn.example.com/ak-redline.png",
+                                                     "updatedAt":  "2026-04-18T14:02:06.162Z"
+                                                 },
+                                                 {
+                                                     "collection":  "Operation Phoenix Weapon Case",
+                                                     "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                     "displayName":  "StatTrak AK-47 | Redline (Field-Tested)",
+                                                     "exterior":  "Field-Tested",
+                                                     "id":  "cmo4eovkm0002lszkfg3mb4ny",
+                                                     "imageUrl":  "https://example.com/items/stattrak-ak-redline.png",
+                                                     "isActive":  true,
+                                                     "itemType":  "SKIN",
+                                                     "latestPriceCount":  0,
+                                                     "lowestCurrentPrice":  null,
+                                                     "lowestCurrentPriceCurrency":  null,
+                                                     "marketHashName":  "StatTrak AK-47 | Redline (Field-Tested)",
+                                                     "phase":  null,
+                                                     "rarity":  "Classified",
+                                                     "slug":  "stattrak-ak-47-redline-field-tested",
+                                                     "steamImageUrl":  "https://steamcdn.example.com/stattrak-ak-redline.png",
+                                                     "updatedAt":  "2026-04-18T14:02:06.162Z"
+                                                 }
+                                             ],
+                                   "pagination":  {
+                                                      "limit":  10,
+                                                      "page":  1,
+                                                      "totalItems":  2,
+                                                      "totalPages":  1
+                                                  }
+                               }
+                  },
+    "itemDetail":  {
+                       "ok":  true,
+                       "data":  {
+                                    "collection":  "Operation Phoenix Weapon Case",
+                                    "createdAt":  "2026-04-18T14:02:06.162Z",
+                                    "displayName":  "AK-47 | Redline (Field-Tested)",
+                                    "exterior":  "Field-Tested",
+                                    "id":  "cmo4eovkm0001lszkwh5e1eid",
+                                    "imageUrl":  "https://example.com/items/ak-redline.png",
+                                    "isActive":  true,
+                                    "itemType":  "SKIN",
+                                    "marketHashName":  "AK-47 | Redline (Field-Tested)",
+                                    "phase":  null,
+                                    "rarity":  "Classified",
+                                    "skinName":  "Redline",
+                                    "slug":  "ak-47-redline-field-tested",
+                                    "souvenir":  false,
+                                    "stattrak":  false,
+                                    "steamImageUrl":  "https://steamcdn.example.com/ak-redline.png",
+                                    "updatedAt":  "2026-04-18T14:02:06.162Z",
+                                    "variantKey":  "AK-47 | Redline (Field-Tested)",
+                                    "weapon":  "AK-47"
+                                }
+                   },
+    "itemLatestPrices":  {
+                             "ok":  true,
+                             "data":  {
+                                          "count":  1,
+                                          "item":  {
+                                                       "collection":  "Operation Phoenix Weapon Case",
+                                                       "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                       "displayName":  "AK-47 | Redline (Field-Tested)",
+                                                       "exterior":  "Field-Tested",
+                                                       "id":  "cmo4eovkm0001lszkwh5e1eid",
+                                                       "imageUrl":  "https://example.com/items/ak-redline.png",
+                                                       "isActive":  true,
+                                                       "itemType":  "SKIN",
+                                                       "marketHashName":  "AK-47 | Redline (Field-Tested)",
+                                                       "phase":  null,
+                                                       "rarity":  "Classified",
+                                                       "skinName":  "Redline",
+                                                       "slug":  "ak-47-redline-field-tested",
+                                                       "souvenir":  false,
+                                                       "stattrak":  false,
+                                                       "steamImageUrl":  "https://steamcdn.example.com/ak-redline.png",
+                                                       "updatedAt":  "2026-04-18T14:02:06.162Z",
+                                                       "variantKey":  "AK-47 | Redline (Field-Tested)",
+                                                       "weapon":  "AK-47"
+                                                   },
+                                          "prices":  [
+                                                         {
+                                                             "currency":  "USD",
+                                                             "fetchedAt":  "2026-04-18T14:02:06.407Z",
+                                                             "marketId":  "cmo4eowco000blszk1zij2oqh",
+                                                             "marketName":  "Steam Community Market",
+                                                             "marketSlug":  "steam",
+                                                             "price":  46.93,
+                                                             "quantity":  null,
+                                                             "sourceUpdatedAt":  null,
+                                                             "volume":  123
+                                                         }
+                                                     ],
+                                          "sort":  "price_asc"
+                                      }
+                         },
+    "snapshot":  {
+                     "ok":  true,
+                     "data":  {
+                                  "created":  4,
+                                  "replacedExisting":  false,
+                                  "rowsWritten":  4,
+                                  "snapshotDate":  "2026-04-18",
+                                  "snapshotHour":  "02:05",
+                                  "status":  "SUCCESS",
+                                  "syncRunId":  "cmo4eowkz000klszk4aa8zeqe",
+                                  "updated":  0
+                              }
+                 },
+    "itemHistory":  {
+                        "ok":  true,
+                        "data":  {
+                                     "count":  1,
+                                     "filters":  {
+                                                     "from":  null,
+                                                     "market":  null,
+                                                     "sort":  "asc",
+                                                     "to":  null
+                                                 },
+                                     "item":  {
+                                                  "collection":  "Operation Phoenix Weapon Case",
+                                                  "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                  "displayName":  "AK-47 | Redline (Field-Tested)",
+                                                  "exterior":  "Field-Tested",
+                                                  "id":  "cmo4eovkm0001lszkwh5e1eid",
+                                                  "imageUrl":  "https://example.com/items/ak-redline.png",
+                                                  "isActive":  true,
+                                                  "itemType":  "SKIN",
+                                                  "marketHashName":  "AK-47 | Redline (Field-Tested)",
+                                                  "phase":  null,
+                                                  "rarity":  "Classified",
+                                                  "skinName":  "Redline",
+                                                  "slug":  "ak-47-redline-field-tested",
+                                                  "souvenir":  false,
+                                                  "stattrak":  false,
+                                                  "steamImageUrl":  "https://steamcdn.example.com/ak-redline.png",
+                                                  "updatedAt":  "2026-04-18T14:02:06.162Z",
+                                                  "variantKey":  "AK-47 | Redline (Field-Tested)",
+                                                  "weapon":  "AK-47"
+                                              },
+                                     "series":  [
+                                                    {
+                                                        "currency":  "USD",
+                                                        "date":  "2026-04-18",
+                                                        "hour":  "02:05",
+                                                        "marketId":  "cmo4eowco000blszk1zij2oqh",
+                                                        "marketName":  "Steam Community Market",
+                                                        "marketSlug":  "steam",
+                                                        "price":  46.93,
+                                                        "quantity":  null,
+                                                        "sourceFetchedAt":  "2026-04-18T14:02:06.407Z",
+                                                        "sourceUpdatedAt":  null,
+                                                        "volume":  123
+                                                    }
+                                                ]
+                                 }
+                    },
+    "healthAfter":  {
+                        "ok":  true,
+                        "data":  {
+                                     "counts":  {
+                                                    "dailySnapshots":  4,
+                                                    "items":  9,
+                                                    "latestPrices":  4,
+                                                    "markets":  1,
+                                                    "syncRuns":  3
+                                                },
+                                     "cron":  {
+                                                  "catalog":  {
+                                                                  "description":  "Catalog sync at low frequency.",
+                                                                  "expression":  "0 3 * * *",
+                                                                  "recommendation":  "Daily at 03:00 Europe/Paris or manual on MVP.",
+                                                                  "timezone":  "Europe/Paris"
+                                                              },
+                                                  "latestPrices":  {
+                                                                       "description":  "Latest prices sync on a medium cadence.",
+                                                                       "expression":  "0 * * * *",
+                                                                       "recommendation":  "Hourly for the sprint MVP.",
+                                                                       "timezone":  "Europe/Paris"
+                                                                   },
+                                                  "snapshot":  {
+                                                                   "description":  "Daily snapshot at a fixed logical hour without fetching providers.",
+                                                                   "expression":  "5 2 * * *",
+                                                                   "recommendation":  "Daily at 02:05 Europe/Paris.",
+                                                                   "snapshotHour":  "02:05",
+                                                                   "timezone":  "Europe/Paris"
+                                                               }
+                                              },
+                                     "env":  {
+                                                 "internalCronEnabled":  false,
+                                                 "priceProvider":  "real",
+                                                 "realProviderBaseUrl":  "https://steamcommunity.com/market/"
+                                             },
+                                     "status":  "ok"
+                                 }
+                    }
+}

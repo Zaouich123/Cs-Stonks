@@ -104,6 +104,7 @@ Ajouts sprint 3 sur `Item` :
 - `MockPriceProvider`
 - `JsonPriceProvider`
 - `SteamPriceProvider` via la source `real`
+- `SkinportPriceProvider` via la source `skinport`
 
 Le provider reel :
 
@@ -180,6 +181,12 @@ Variables principales :
 
 Variables du provider reel :
 
+- `SKINPORT_BASE_URL`
+- `SKINPORT_APP_ID`
+- `SKINPORT_CURRENCY`
+- `SKINPORT_CHUNK_SIZE`
+- `SKINPORT_FETCH_ALL_SALES_HISTORY`
+
 - `REAL_PROVIDER_BASE_URL`
 - `REAL_PROVIDER_APP_ID`
 - `REAL_PROVIDER_COUNTRY`
@@ -232,6 +239,20 @@ et mappe les types internes :
 Les URLs d'images sont resolues et stockees dans `imageUrl` et `steamImageUrl`.
 
 Par defaut, `PRICE_PROVIDER="json"`.
+Pour utiliser Skinport :
+
+```bash
+PRICE_PROVIDER=skinport
+```
+
+Le provider Skinport :
+
+- utilise `GET /v1/sales/history`
+- ne demande pas d'API key pour cette sync publique
+- envoie `Accept-Encoding: br` comme demande par la doc officielle
+- choisit un prix a partir de `last_24_hours.median`, puis fallback sur `avg`, puis `7d`, `30d`, `90d`
+- persiste le market `skinport`
+
 Pour utiliser le vrai provider :
 
 ```bash
@@ -279,7 +300,7 @@ curl -X POST http://localhost:3000/api/internal/catalog/refresh-images \
 ```bash
 curl -X POST http://localhost:3000/api/internal/sync/prices \
   -H "Content-Type: application/json" \
-  -d "{\"source\":\"real\"}"
+  -d "{\"source\":\"skinport\"}"
 ```
 
 Sources prix :
@@ -287,6 +308,7 @@ Sources prix :
 - `json`
 - `mock`
 - `real`
+- `skinport`
 
 Si `source` est omise, la route prend `PRICE_PROVIDER`.
 

@@ -1,0 +1,97 @@
+{
+    "healthAfterJobs":  {
+                            "ok":  true,
+                            "data":  {
+                                         "counts":  {
+                                                        "dailySnapshots":  4,
+                                                        "items":  9,
+                                                        "latestPrices":  4,
+                                                        "markets":  1,
+                                                        "syncRuns":  6
+                                                    },
+                                         "cron":  {
+                                                      "catalog":  {
+                                                                      "description":  "Catalog sync at low frequency.",
+                                                                      "expression":  "0 3 * * *",
+                                                                      "recommendation":  "Daily at 03:00 Europe/Paris or manual on MVP.",
+                                                                      "timezone":  "Europe/Paris"
+                                                                  },
+                                                      "latestPrices":  {
+                                                                           "description":  "Latest prices sync on a medium cadence.",
+                                                                           "expression":  "0 * * * *",
+                                                                           "recommendation":  "Hourly for the sprint MVP.",
+                                                                           "timezone":  "Europe/Paris"
+                                                                       },
+                                                      "snapshot":  {
+                                                                       "description":  "Daily snapshot at a fixed logical hour without fetching providers.",
+                                                                       "expression":  "5 2 * * *",
+                                                                       "recommendation":  "Daily at 02:05 Europe/Paris.",
+                                                                       "snapshotHour":  "02:05",
+                                                                       "timezone":  "Europe/Paris"
+                                                                   }
+                                                  },
+                                         "env":  {
+                                                     "internalCronEnabled":  false,
+                                                     "priceProvider":  "real",
+                                                     "realProviderBaseUrl":  "https://steamcommunity.com/market/"
+                                                 },
+                                         "status":  "ok"
+                                     }
+                        },
+    "itemsListAfterJobs":  {
+                               "ok":  true,
+                               "data":  {
+                                            "filters":  {
+                                                            "itemType":  null,
+                                                            "query":  "ak redline",
+                                                            "sort":  "displayName_asc"
+                                                        },
+                                            "items":  [
+                                                          {
+                                                              "collection":  "Operation Phoenix Weapon Case",
+                                                              "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                              "displayName":  "AK-47 | Redline (Field-Tested)",
+                                                              "exterior":  "Field-Tested",
+                                                              "id":  "cmo4eovkm0001lszkwh5e1eid",
+                                                              "imageUrl":  "https://example.com/items/ak-redline.png",
+                                                              "isActive":  true,
+                                                              "itemType":  "SKIN",
+                                                              "latestPriceCount":  1,
+                                                              "lowestCurrentPrice":  46.93,
+                                                              "lowestCurrentPriceCurrency":  "USD",
+                                                              "marketHashName":  "AK-47 | Redline (Field-Tested)",
+                                                              "phase":  null,
+                                                              "rarity":  "Classified",
+                                                              "slug":  "ak-47-redline-field-tested",
+                                                              "steamImageUrl":  "https://steamcdn.example.com/ak-redline.png",
+                                                              "updatedAt":  "2026-04-18T14:02:21.124Z"
+                                                          },
+                                                          {
+                                                              "collection":  "Operation Phoenix Weapon Case",
+                                                              "createdAt":  "2026-04-18T14:02:06.162Z",
+                                                              "displayName":  "StatTrak AK-47 | Redline (Field-Tested)",
+                                                              "exterior":  "Field-Tested",
+                                                              "id":  "cmo4eovkm0002lszkfg3mb4ny",
+                                                              "imageUrl":  "https://example.com/items/stattrak-ak-redline.png",
+                                                              "isActive":  true,
+                                                              "itemType":  "SKIN",
+                                                              "latestPriceCount":  0,
+                                                              "lowestCurrentPrice":  null,
+                                                              "lowestCurrentPriceCurrency":  null,
+                                                              "marketHashName":  "StatTrak AK-47 | Redline (Field-Tested)",
+                                                              "phase":  null,
+                                                              "rarity":  "Classified",
+                                                              "slug":  "stattrak-ak-47-redline-field-tested",
+                                                              "steamImageUrl":  "https://steamcdn.example.com/stattrak-ak-redline.png",
+                                                              "updatedAt":  "2026-04-18T14:02:21.124Z"
+                                                          }
+                                                      ],
+                                            "pagination":  {
+                                                               "limit":  10,
+                                                               "page":  1,
+                                                               "totalItems":  2,
+                                                               "totalPages":  1
+                                                           }
+                                        }
+                           }
+}

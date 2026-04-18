@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --color-surface: #f3efe4;
-  --color-card: rgba(255, 251, 243, 0.82);
-  --color-card-strong: #fffaf0;
-  --color-border: rgba(34, 41, 46, 0.15);
-  --color-ink: #16202a;
-  --color-muted: #5f6b75;
-  --color-accent: #c05a2d;
-  --color-accent-soft: rgba(192, 90, 45, 0.14);
-  --color-highlight: #1f5f58;
+  --color-surface: #030816;
+  --color-card: rgba(13, 24, 42, 0.6);
+  --color-card-strong: rgba(13, 24, 42, 0.85);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-ink: #f0f4f8;
+  --color-muted: #8b9bb4;
+  --color-accent: #093066;
+  --color-accent-soft: rgba(9, 48, 102, 0.3);
+  --color-highlight: #4da3ff;
 }
 
 @theme inline {
@@ -24,15 +24,14 @@
 }
 
 html {
-  background:
-    radial-gradient(circle at top left, rgba(31, 95, 88, 0.18), transparent 34%),
-    radial-gradient(circle at top right, rgba(192, 90, 45, 0.2), transparent 28%),
-    linear-gradient(180deg, #fcfaf5 0%, #efe8d7 100%);
+  background-color: var(--color-surface);
 }
 
 body {
   font-family: var(--font-space-grotesk), sans-serif;
   min-height: 100vh;
+  color: var(--color-ink);
+  background-color: transparent;
 }
 
 a {
@@ -41,5 +40,30 @@ a {
 }
 
 ::selection {
-  background: rgba(192, 90, 45, 0.22);
+  background: rgba(77, 163, 255, 0.3);
+}
+
+@keyframes aurora-bg {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 50%; }
+  100% { background-position: 0% 0%; }
+}
+
+.aurora-text-clip {
+  background: 
+    radial-gradient(circle at 10% 20%, #00c2ff 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, #33ff8c 0%, transparent 50%),
+    radial-gradient(circle at 50% 10%, #ffc640 0%, transparent 50%),
+    radial-gradient(circle at 30% 90%, #e54cff 0%, transparent 50%),
+    radial-gradient(circle at 70% 40%, #4da3ff 0%, transparent 50%);
+  background-color: #093066;
+  background-blend-mode: hard-light;
+  background-size: 200% 200%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: aurora-bg 8s infinite alternate ease-in-out;
+  display: inline-block;
 }

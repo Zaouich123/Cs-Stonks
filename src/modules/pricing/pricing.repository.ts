@@ -7,6 +7,9 @@ import type {
   LatestPriceWriteResult,
 } from "@/modules/pricing/pricing.types";
 
+const FIND_EXISTING_BATCH_SIZE = 1000;
+const UPSERT_BATCH_SIZE = 500;
+
 function dedupePriceWrites(prices: LatestPriceWriteInput[]) {
   const map = new Map<string, LatestPriceWriteInput>();
 
@@ -15,6 +18,16 @@ function dedupePriceWrites(prices: LatestPriceWriteInput[]) {
   }
 
   return [...map.values()];
+}
+
+function chunkArray<T>(items: T[], chunkSize: number) {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+
+  return chunks;
 }
 
 export class PrismaLatestPriceRepository implements LatestPriceRepository {
@@ -95,50 +108,58 @@ export class PrismaLatestPriceRepository implements LatestPriceRepository {
       };
     }
 
-    const existingPrices = await this.prisma.latestPrice.findMany({
-      select: {
-        itemId: true,
-        marketId: true,
-      },
-      where: {
-        OR: uniquePrices.map((price) => ({
-          itemId: price.itemId,
-          marketId: price.marketId,
-        })),
-      },
-    });
-    const existingKeys = new Set(existingPrices.map((price) => `${price.itemId}:${price.marketId}`));
+    const existingPrices = [];
 
-    await this.prisma.$transaction(
-      uniquePrices.map((price) =>
-        this.prisma.latestPrice.upsert({
-          create: {
-            currency: price.currency,
-            fetchedAt: price.fetchedAt,
-            itemId: price.itemId,
-            marketId: price.marketId,
-            price: price.price,
-            quantity: price.quantity,
-            sourceUpdatedAt: price.sourceUpdatedAt,
-            volume: price.volume,
-          },
-          update: {
-            currency: price.currency,
-            fetchedAt: price.fetchedAt,
-            price: price.price,
-            quantity: price.quantity,
-            sourceUpdatedAt: price.sourceUpdatedAt,
-            volume: price.volume,
+    for (const chunk of chunkArray(uniquePrices, FIND_EXISTING_BATCH_SIZE)) {
+      existingPrices.push(
+        ...(await this.prisma.latestPrice.findMany({
+          select: {
+            itemId: true,
+            marketId: true,
           },
           where: {
-            itemId_marketId: {
+            OR: chunk.map((price) => ({
               itemId: price.itemId,
               marketId: price.marketId,
-            },
+            })),
           },
-        }),
-      ),
-    );
+        })),
+      );
+    }
+    const existingKeys = new Set(existingPrices.map((price) => `${price.itemId}:${price.marketId}`));
+
+    for (const chunk of chunkArray(uniquePrices, UPSERT_BATCH_SIZE)) {
+      await this.prisma.$transaction(
+        chunk.map((price) =>
+          this.prisma.latestPrice.upsert({
+            create: {
+              currency: price.currency,
+              fetchedAt: price.fetchedAt,
+              itemId: price.itemId,
+              marketId: price.marketId,
+              price: price.price,
+              quantity: price.quantity,
+              sourceUpdatedAt: price.sourceUpdatedAt,
+              volume: price.volume,
+            },
+            update: {
+              currency: price.currency,
+              fetchedAt: price.fetchedAt,
+              price: price.price,
+              quantity: price.quantity,
+              sourceUpdatedAt: price.sourceUpdatedAt,
+              volume: price.volume,
+            },
+            where: {
+              itemId_marketId: {
+                itemId: price.itemId,
+                marketId: price.marketId,
+              },
+            },
+          }),
+        ),
+      );
+    }
 
     return {
       created: uniquePrices.filter(
@@ -151,4 +172,3 @@ export class PrismaLatestPriceRepository implements LatestPriceRepository {
     };
   }
 }
-
