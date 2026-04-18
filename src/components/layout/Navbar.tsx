@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Logo } from "../ui/Logo";
 import { Button } from "../ui/Button";
 
@@ -27,31 +28,35 @@ export function Navbar() {
         <Logo />
 
         <nav className="hidden items-center gap-8 md:flex">
-          <a
-            href="#"
+          <Link
+            href="/prices"
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"
           >
             Markets
-          </a>
-          <a
+          </Link>
+          <Link
             href="#"
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"
           >
             Portfolio
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/analyze"
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"
           >
             Analytics
-          </a>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden md:inline-flex">
-            Log in
-          </Button>
-          <Button variant="primary">Get Started</Button>
+          <Link href="/auth">
+            <Button variant="ghost" className="hidden md:inline-flex">
+              Log in
+            </Button>
+          </Link>
+          <Link href="/auth">
+            <Button variant="primary">Get Started</Button>
+          </Link>
         </div>
       </div>
     </header>
