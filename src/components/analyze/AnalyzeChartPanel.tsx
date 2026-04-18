@@ -21,7 +21,8 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
   const color = isPositive ? "#22c55e" : "#ef4444"; // Tailwind green-500 or red-500
 
   // Custom tooltip for premium feel
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-[#0d182a]/90 backdrop-blur-md border border-[color:var(--color-border)] p-3 rounded-lg shadow-xl">
