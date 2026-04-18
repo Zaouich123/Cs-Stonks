@@ -125,7 +125,34 @@ Elles restent utiles pour les tests et les smoke tests deterministes.
 
 ## Setup local
 
-1. Demarrer PostgreSQL.
+1. Option recommandee avec Docker :
+
+```bash
+npm run db:docker:setup
+```
+
+Cette commande :
+
+- demarre PostgreSQL dans Docker sur `localhost:5432`
+- cree `cs_stonks` et `cs_stonks_shadow`
+- applique le schema Prisma
+- migre les donnees depuis la base courante pointee par `.env`
+- reecrit `.env` vers la base Docker
+
+Commandes utiles :
+
+```bash
+npm run dev:docker
+npm run db:docker:up
+npm run db:docker:status
+npm run db:docker:down
+```
+
+Fichiers Docker :
+
+- [compose.yml](compose.yml)
+- [docker/postgres/init/01-create-shadow-db.sql](docker/postgres/init/01-create-shadow-db.sql)
+
 2. Option rapide sans Docker :
 
 ```bash
@@ -161,6 +188,42 @@ Note pour `prisma dev` :
 
 - laisser `pgbouncer=true` sur `DATABASE_URL` pour eviter les conflits de prepared statements dans les jobs
 - garder `SHADOW_DATABASE_URL` sans `pgbouncer=true`
+
+## Setup local durable avec Prisma Dev
+
+Si tu n'as pas PostgreSQL installe localement, le workflow le plus simple pour garder une base locale persistante pour ce repo est :
+
+```bash
+npm run db:local:setup
+```
+
+Cette commande :
+
+- demarre un serveur Prisma Dev nomme `cs-stonks-local`
+- reecrit `DATABASE_URL` et `SHADOW_DATABASE_URL` dans `.env`
+- genere Prisma
+- applique le schema avec `prisma db push`
+- importe le catalogue seulement si la base est vide
+
+Le point important n'est pas d'avoir des ports imposes, mais d'avoir toujours le bon port dans `.env`.
+Le script relit automatiquement les vraies URLs du serveur Prisma Dev et remet `.env` a jour a chaque demarrage.
+
+Commandes utiles :
+
+```bash
+npm run dev:local
+npm run db:local:start
+npm run db:local:status
+npm run db:local:stop
+```
+
+`npm run dev:local` est la commande recommandee en developpement : elle prepare la bonne base locale puis lance Next.js avec un `.env` synchronise.
+
+Important :
+
+- les donnees restent attachees au serveur Prisma Dev `cs-stonks-local`
+- tu n'as plus besoin de recreer une nouvelle base a chaque sprint
+- si les items disparaissent, relance `npm run db:local:setup` ou `npm run db:local:start` pour resynchroniser `.env`
 
 ## Variables d'environnement
 

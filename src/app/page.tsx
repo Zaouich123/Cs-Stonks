@@ -1,6 +1,5 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { BackgroundFX } from "@/components/home/BackgroundFX";
-import { CandlestickBackground } from "@/components/home/CandlestickBackground";
 import { HeroSection } from "@/components/home/HeroSection";
 import { prisma } from "@/lib/db/prisma";
 

@@ -6,7 +6,8 @@
     "marketHashName": "AK-47 | Redline (Field-Tested)",
     "itemType": "SKIN",
     "marketSlug": "skinport",
-    "currency": "USD"
+    "currency": "USD",
+    "stock": 342
   },
   "range": {
     "from": "2026-01-19",
