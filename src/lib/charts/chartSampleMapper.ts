@@ -14,6 +14,15 @@ export function getSampleChartData(): ChartDataPoint[] {
   }));
 }
 
-export function getSampleItemInfo() {
+export interface ItemInfo {
+  displayName: string;
+  marketHashName: string;
+  itemType: string;
+  marketSlug: string;
+  currency: string;
+  stock?: number;
+}
+
+export function getSampleItemInfo(): ItemInfo {
   return chartData.item;
 }

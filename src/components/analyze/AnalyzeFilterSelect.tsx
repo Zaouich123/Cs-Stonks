@@ -3,8 +3,24 @@
 import * as React from "react";
 import { ChevronDown, Search } from "lucide-react";
 
-export function AnalyzeFilterSelect() {
+interface AnalyzeFilterSelectProps {
+  value: number;
+  onChange: (days: number) => void;
+}
+
+export function AnalyzeFilterSelect({ value, onChange }: AnalyzeFilterSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleSelect = (days: number) => {
+    onChange(days);
+    setIsOpen(false);
+  };
+
+  const getLabel = (days: number) => {
+    if (days === 30) return "30 Days";
+    if (days === 90) return "90 Days";
+    return "1 Year";
+  };
 
   return (
     <div className="relative">
@@ -12,7 +28,7 @@ export function AnalyzeFilterSelect() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 bg-[color:var(--color-card)] border border-[color:var(--color-border)] rounded-xl hover:bg-[color:var(--color-card-strong)] transition-colors text-sm font-medium"
       >
-        <span>90 Days</span>
+        <span>{getLabel(value)}</span>
         <ChevronDown className="w-4 h-4 text-[color:var(--color-muted)]" />
       </button>
 
@@ -27,9 +43,24 @@ export function AnalyzeFilterSelect() {
             />
           </div>
           <div className="p-1">
-            <button className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)] transition-colors">30 Days</button>
-            <button className="w-full text-left px-3 py-2 text-sm rounded-lg bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium transition-colors">90 Days</button>
-            <button className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)] transition-colors">1 Year</button>
+            <button 
+              onClick={() => handleSelect(30)}
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${value === 30 ? 'bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium' : 'hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)]'}`}
+            >
+              30 Days
+            </button>
+            <button 
+              onClick={() => handleSelect(90)}
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${value === 90 ? 'bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium' : 'hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)]'}`}
+            >
+              90 Days
+            </button>
+            <button 
+              onClick={() => handleSelect(365)}
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${value === 365 ? 'bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium' : 'hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)]'}`}
+            >
+              1 Year
+            </button>
           </div>
         </div>
       )}
