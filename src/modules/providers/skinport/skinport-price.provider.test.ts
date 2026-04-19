@@ -173,6 +173,18 @@ describe("skinport-price.provider", () => {
       medianPrice: 44.1,
       price: 44.1,
       quantity: 12,
+      sales24hMin: 43.8,
+      sales24hMedian: 44.1,
+      sales24hVolume: 12,
+      sales7dMin: 42.8,
+      sales7dMedian: 44,
+      sales7dVolume: 48,
+      sales30dMin: 40,
+      sales30dMedian: 43.2,
+      sales30dVolume: 220,
+      sales90dMin: 39.5,
+      sales90dMedian: 42.9,
+      sales90dVolume: 580,
       sourceItemUrl: "https://skinport.com/item/ak-redline",
       sourceMarketUrl: "https://skinport.com/market/ak-redline",
       suggestedPrice: 44.2,
@@ -216,5 +228,69 @@ describe("skinport-price.provider", () => {
     });
     expect(result.summary.warnings).toHaveLength(1);
     expect(result.summary.warnings[0]?.code).toBe("ITEM_NOT_FOUND");
+  });
+
+  it("falls back to canonical matching when Skinport casing differs from the catalog", async () => {
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.includes("/items?")) {
+        return createJsonResponse([
+          {
+            created_at: 1713400000,
+            currency: "USD",
+            item_page: "https://skinport.com/item/volt",
+            market_hash_name: "Sticker | volt (Glitter) | Shanghai 2024",
+            market_page: "https://skinport.com/market/volt",
+            max_price: 1.55,
+            mean_price: 1.42,
+            median_price: 1.38,
+            min_price: 1.31,
+            quantity: 9,
+            suggested_price: 1.4,
+            updated_at: 1713403600,
+          },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
+
+    const provider = new SkinportPriceProvider(
+      {
+        appId: 730,
+        baseUrl: "https://api.skinport.test/v1",
+        chunkSize: 100,
+        currency: "USD",
+        fetchAllSalesHistory: false,
+        fetchSalesHistory: false,
+        requestTimeoutMs: 5000,
+        tradableOnly: false,
+      },
+      fetchImpl,
+    );
+
+    const result = await provider.fetchLatestPrices({
+      items: [
+        {
+          displayName: "Sticker | Volt (Glitter) | Shanghai 2024",
+          itemId: "item_volt",
+          marketHashName: "Sticker | Volt (Glitter) | Shanghai 2024",
+          phase: null,
+          slug: "sticker-volt-glitter-shanghai-2024",
+          variantKey: "Sticker | Volt (Glitter) | Shanghai 2024",
+        },
+      ],
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.summary.matchedCanonicalCount).toBe(1);
+    expect(result.summary.matchedExactCount).toBe(0);
+    expect(result.items[0]).toMatchObject({
+      marketHashName: "Sticker | Volt (Glitter) | Shanghai 2024",
+      price: 1.38,
+      variantKeyOverride: "Sticker | Volt (Glitter) | Shanghai 2024",
+    });
+    expect(result.summary.warnings).toEqual([]);
   });
 });

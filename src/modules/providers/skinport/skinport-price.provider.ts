@@ -3,7 +3,9 @@ import type {
   PriceProviderFetchInput,
   PriceProviderFetchResult,
   PriceProviderWarning,
+  PriceSyncTargetItem,
 } from "@/modules/providers/provider.types";
+import { normalizeSearchText } from "@/modules/catalog/catalog.normalizer";
 import { SkinportClient } from "@/modules/providers/skinport/skinport.client";
 import { mapSkinportRecordToRawPrice } from "@/modules/providers/skinport/skinport.mapper";
 import type { SkinportPriceProviderConfig } from "@/modules/providers/skinport/skinport.types";
@@ -62,6 +64,27 @@ function dedupeSkinportItemsByMarketHashName<T extends { market_hash_name: strin
   return [...map.values()];
 }
 
+function buildUniqueCanonicalTargetMap(items: PriceSyncTargetItem[]) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    const key = normalizeSearchText(item.marketHashName);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const map = new Map<string, PriceSyncTargetItem>();
+
+  for (const item of items) {
+    const key = normalizeSearchText(item.marketHashName);
+
+    if (counts.get(key) === 1) {
+      map.set(key, item);
+    }
+  }
+
+  return map;
+}
+
 export function getSkinportPriceProviderConfig(): SkinportPriceProviderConfig {
   return {
     appId: clampPositiveInteger(process.env.SKINPORT_APP_ID, DEFAULT_APP_ID),
@@ -93,28 +116,57 @@ export class SkinportPriceProvider implements PriceProvider {
   async fetchLatestPrices(input: PriceProviderFetchInput): Promise<PriceProviderFetchResult> {
     const requestedTargets = input.items.length;
     const targetMap = new Map(input.items.map((item) => [item.marketHashName.trim(), item]));
+    const canonicalTargetMap = buildUniqueCanonicalTargetMap(input.items);
     const fetchedAt = new Date().toISOString();
     const providerItems = dedupeSkinportItemsByMarketHashName(await this.client.fetchItems());
-    const providerItemsMatchedTargets = providerItems.filter((item) =>
-      targetMap.has(item.market_hash_name.trim()),
-    );
+    const providerItemsMatchedTargets = providerItems
+      .map((item) => {
+        const exactTarget = targetMap.get(item.market_hash_name.trim());
+
+        if (exactTarget) {
+          return {
+            item,
+            matchType: "exact" as const,
+            target: exactTarget,
+          };
+        }
+
+        const canonicalTarget = canonicalTargetMap.get(normalizeSearchText(item.market_hash_name.trim()));
+
+        if (canonicalTarget) {
+          return {
+            item,
+            matchType: "canonical" as const,
+            target: canonicalTarget,
+          };
+        }
+
+        return null;
+      })
+      .filter((match): match is NonNullable<typeof match> => match !== null);
     const historyEnabled = this.config.fetchSalesHistory;
     const historyItems = historyEnabled
       ? this.config.fetchAllSalesHistory
         ? await this.client.fetchSalesHistory()
         : await this.client.fetchSalesHistoryForTargets(
-            providerItemsMatchedTargets.map((item) => item.market_hash_name.trim()),
+            providerItemsMatchedTargets.map((entry) => entry.item.market_hash_name.trim()),
           )
       : [];
     const historyMap = new Map(
       historyItems.map((item) => [item.market_hash_name.trim(), item]),
     );
     const warnings: PriceProviderWarning[] = [];
+    const matchedTargetKeys = new Set(providerItemsMatchedTargets.map((entry) => entry.target.marketHashName.trim()));
+    const matchedExactCount = providerItemsMatchedTargets.filter((entry) => entry.matchType === "exact").length;
+    const matchedCanonicalCount = providerItemsMatchedTargets.filter(
+      (entry) => entry.matchType === "canonical",
+    ).length;
     const items = providerItemsMatchedTargets
-      .map((providerItem) => {
+      .map(({ item: providerItem, target }) => {
         const mapped = mapSkinportRecordToRawPrice(
           providerItem,
           historyMap.get(providerItem.market_hash_name.trim()) ?? null,
+          target,
           fetchedAt,
         );
 
@@ -123,7 +175,7 @@ export class SkinportPriceProvider implements PriceProvider {
             code: "NO_USABLE_PRICE",
             marketHashName: providerItem.market_hash_name,
             message: `Skinport did not expose a usable price for "${providerItem.market_hash_name}".`,
-            variantKey: targetMap.get(providerItem.market_hash_name.trim())?.variantKey,
+            variantKey: target.variantKey,
           });
         }
 
@@ -132,7 +184,7 @@ export class SkinportPriceProvider implements PriceProvider {
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
     for (const target of input.items) {
-      if (!providerItems.some((item) => item.market_hash_name.trim() === target.marketHashName)) {
+      if (!matchedTargetKeys.has(target.marketHashName.trim())) {
         warnings.push({
           code: "ITEM_NOT_FOUND",
           marketHashName: target.marketHashName,
@@ -149,6 +201,8 @@ export class SkinportPriceProvider implements PriceProvider {
       items,
       summary: {
         attemptedTargets: providerItemsMatchedTargets.length,
+        matchedCanonicalCount,
+        matchedExactCount,
         providerHistoryRecordsReceived: historyItems.length,
         providerItemsReceived: providerItems.length,
         requestedTargets,

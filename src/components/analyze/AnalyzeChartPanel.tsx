@@ -42,6 +42,14 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
     return null;
   };
 
+  let displayData = data;
+  if (data.length === 1) {
+    const single = data[0];
+    // Create a point 1 day in the past to draw a flat line
+    const pastDate = new Date(new Date(single.date).getTime() - 86400000).toISOString().split('T')[0];
+    displayData = [{ ...single, date: pastDate }, single];
+  }
+
   return (
     <div className="w-full flex flex-col mt-8 relative gap-1">
       {/* Price Chart */}
@@ -50,7 +58,7 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
         <div className="flex-1 h-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={data}
+              data={displayData}
               syncId="marketChart"
               margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             >
@@ -93,7 +101,7 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
         <div className="flex-1 h-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={data}
+              data={displayData}
               syncId="marketChart"
               margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
             >

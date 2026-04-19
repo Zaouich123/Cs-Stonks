@@ -102,6 +102,18 @@ model LatestPrice {
   currency        String    @db.VarChar(3)
   quantity        Int?
   volume          Int?
+  sales24hMin     Decimal?  @db.Decimal(12, 2)
+  sales24hMedian  Decimal?  @db.Decimal(12, 2)
+  sales24hVolume  Int?
+  sales7dMin      Decimal?  @db.Decimal(12, 2)
+  sales7dMedian   Decimal?  @db.Decimal(12, 2)
+  sales7dVolume   Int?
+  sales30dMin     Decimal?  @db.Decimal(12, 2)
+  sales30dMedian  Decimal?  @db.Decimal(12, 2)
+  sales30dVolume  Int?
+  sales90dMin     Decimal?  @db.Decimal(12, 2)
+  sales90dMedian  Decimal?  @db.Decimal(12, 2)
+  sales90dVolume  Int?
   sourceItemUrl   String?
   sourceMarketUrl String?
   fetchedAt       DateTime
@@ -126,9 +138,26 @@ model DailySnapshot {
   itemId          String
   marketId        String
   price           Decimal   @db.Decimal(12, 2)
+  minPrice        Decimal?  @db.Decimal(12, 2)
+  maxPrice        Decimal?  @db.Decimal(12, 2)
+  meanPrice       Decimal?  @db.Decimal(12, 2)
+  medianPrice     Decimal?  @db.Decimal(12, 2)
+  suggestedPrice  Decimal?  @db.Decimal(12, 2)
   currency        String    @db.VarChar(3)
   quantity        Int?
   volume          Int?
+  sales24hMin     Decimal?  @db.Decimal(12, 2)
+  sales24hMedian  Decimal?  @db.Decimal(12, 2)
+  sales24hVolume  Int?
+  sales7dMin      Decimal?  @db.Decimal(12, 2)
+  sales7dMedian   Decimal?  @db.Decimal(12, 2)
+  sales7dVolume   Int?
+  sales30dMin     Decimal?  @db.Decimal(12, 2)
+  sales30dMedian  Decimal?  @db.Decimal(12, 2)
+  sales30dVolume  Int?
+  sales90dMin     Decimal?  @db.Decimal(12, 2)
+  sales90dMedian  Decimal?  @db.Decimal(12, 2)
+  sales90dVolume  Int?
   sourceFetchedAt DateTime
   sourceUpdatedAt DateTime?
   createdAt       DateTime  @default(now())
