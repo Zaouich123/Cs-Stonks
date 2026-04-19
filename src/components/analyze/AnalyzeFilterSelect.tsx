@@ -17,6 +17,7 @@ export function AnalyzeFilterSelect({ value, onChange }: AnalyzeFilterSelectProp
   };
 
   const getLabel = (days: number) => {
+    if (days === 7) return "7 Days";
     if (days === 30) return "30 Days";
     if (days === 90) return "90 Days";
     return "1 Year";
@@ -43,6 +44,12 @@ export function AnalyzeFilterSelect({ value, onChange }: AnalyzeFilterSelectProp
             />
           </div>
           <div className="p-1">
+            <button 
+              onClick={() => handleSelect(7)}
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${value === 7 ? 'bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium' : 'hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)]'}`}
+            >
+              7 Days
+            </button>
             <button 
               onClick={() => handleSelect(30)}
               className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${value === 30 ? 'bg-[color:var(--color-accent-soft)] text-[color:var(--color-highlight)] font-medium' : 'hover:bg-[color:var(--color-card)] text-[color:var(--color-ink)]'}`}
