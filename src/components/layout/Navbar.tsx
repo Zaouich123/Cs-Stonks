@@ -24,10 +24,16 @@ export function Navbar() {
           : "bg-transparent py-6"
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <div className="mx-auto flex max-w-[92rem] items-center justify-between">
         <Logo />
 
         <nav className="hidden items-center gap-8 md:flex">
+          <Link
+            href="/api-docs"
+            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
+          >
+            API Docs
+          </Link>
           <Link
             href="/prices"
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"
