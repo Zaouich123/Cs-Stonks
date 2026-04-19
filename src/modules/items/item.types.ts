@@ -89,12 +89,31 @@ export interface ItemDetailRow {
 export interface ItemLatestPriceRow {
   currency: string;
   fetchedAt: Date;
+  maxPrice: number | null;
   marketId: string;
   marketName: string;
   marketSlug: string;
+  meanPrice: number | null;
+  medianPrice: number | null;
+  minPrice: number | null;
   price: number;
   quantity: number | null;
+  sales24hMedian: number | null;
+  sales24hMin: number | null;
+  sales24hVolume: number | null;
+  sales30dMedian: number | null;
+  sales30dMin: number | null;
+  sales30dVolume: number | null;
+  sales7dMedian: number | null;
+  sales7dMin: number | null;
+  sales7dVolume: number | null;
+  sales90dMedian: number | null;
+  sales90dMin: number | null;
+  sales90dVolume: number | null;
+  sourceItemUrl: string | null;
+  sourceMarketUrl: string | null;
   sourceUpdatedAt: Date | null;
+  suggestedPrice: number | null;
   volume: number | null;
 }
 
@@ -105,15 +124,32 @@ export interface GetItemLatestPricesInput {
 
 export interface ItemHistoryRow {
   currency: string;
+  maxPrice: number | null;
   marketId: string;
   marketName: string;
   marketSlug: string;
+  meanPrice: number | null;
+  medianPrice: number | null;
+  minPrice: number | null;
   price: number;
   quantity: number | null;
+  sales24hMedian: number | null;
+  sales24hMin: number | null;
+  sales24hVolume: number | null;
+  sales30dMedian: number | null;
+  sales30dMin: number | null;
+  sales30dVolume: number | null;
+  sales7dMedian: number | null;
+  sales7dMin: number | null;
+  sales7dVolume: number | null;
+  sales90dMedian: number | null;
+  sales90dMin: number | null;
+  sales90dVolume: number | null;
   snapshotDate: Date;
   snapshotHour: string;
   sourceFetchedAt: Date;
   sourceUpdatedAt: Date | null;
+  suggestedPrice: number | null;
   volume: number | null;
 }
 

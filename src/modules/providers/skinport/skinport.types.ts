@@ -6,6 +6,21 @@ export interface SkinportPriceWindow {
   volume: number;
 }
 
+export interface SkinportItemRecord {
+  created_at: number;
+  currency: string;
+  item_page: string;
+  market_hash_name: string;
+  market_page: string;
+  max_price: number | null;
+  mean_price: number | null;
+  median_price: number | null;
+  min_price: number | null;
+  quantity: number;
+  suggested_price: number | null;
+  updated_at: number;
+}
+
 export interface SkinportSalesHistoryItem {
   currency: string;
   item_page: string;
@@ -23,5 +38,8 @@ export interface SkinportPriceProviderConfig {
   baseUrl: string;
   chunkSize: number;
   currency: string;
+  fetchSalesHistory: boolean;
   fetchAllSalesHistory: boolean;
+  requestTimeoutMs: number;
+  tradableOnly: boolean;
 }

@@ -45,12 +45,33 @@ export interface RawMarketRecord {
 export interface RawPriceProviderItem {
   currency?: string | null;
   fetchedAt: string;
+  maxPrice?: number | null;
   market: RawMarketRecord;
   marketHashName: string;
+  meanPrice?: number | null;
+  medianPrice?: number | null;
+  minPrice?: number | null;
   phase?: string | null;
   price: number;
   quantity?: number | null;
+  rawPayload?: Record<string, unknown> | null;
+  sales24hMedian?: number | null;
+  sales24hMin?: number | null;
+  sales24hVolume?: number | null;
+  sales30dMedian?: number | null;
+  sales30dMin?: number | null;
+  sales30dVolume?: number | null;
+  sales7dMedian?: number | null;
+  sales7dMin?: number | null;
+  sales7dVolume?: number | null;
+  sales90dMedian?: number | null;
+  sales90dMin?: number | null;
+  sales90dVolume?: number | null;
+  sourceItemUrl?: string | null;
+  sourceMarketUrl?: string | null;
   sourceUpdatedAt?: string | null;
+  suggestedPrice?: number | null;
+  variantKeyOverride?: string | null;
   volume?: number | null;
 }
 
@@ -67,10 +88,15 @@ export interface PriceProviderFetchInput {
 
 export interface PriceProviderFetchSummary {
   attemptedTargets: number;
+  matchedCanonicalCount?: number;
+  matchedExactCount?: number;
+  providerHistoryRecordsReceived?: number;
+  providerItemsReceived?: number;
   requestedTargets: number;
   returnedRecords: number;
   skippedTargets: number;
   truncatedTargets: number;
+  warningCodeCounts?: Record<string, number>;
   warnings: PriceProviderWarning[];
 }
 

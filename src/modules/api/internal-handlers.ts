@@ -8,6 +8,7 @@ import {
   createLatestPricingQueryService,
   createLatestPricingSyncService,
 } from "@/modules/bootstrap";
+import { SkinportDailyIngestionService } from "@/modules/pricing/skinport-daily-ingestion.service";
 import {
   catalogProviderSources,
   priceProviderSources,
@@ -83,6 +84,26 @@ export async function handleDailySnapshotRoute(request: Request) {
   }
 }
 
+export async function handleSkinportSyncRoute() {
+  try {
+    const result = await new SkinportDailyIngestionService().syncLatestPrices();
+
+    return successResponse(result, 200);
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
+export async function handleSkinportSyncAndSnapshotRoute() {
+  try {
+    const result = await new SkinportDailyIngestionService().syncLatestPricesAndSnapshot();
+
+    return successResponse(result, 200);
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
 export async function handleLatestPricesQueryRoute(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -118,5 +139,7 @@ export const POSTCatalogImport = handleCatalogSyncRoute;
 export const POSTCatalogRefreshImages = handleCatalogRefreshImagesRoute;
 export const POSTPricesSync = handleLatestPricesSyncRoute;
 export const POSTDailySnapshot = handleDailySnapshotRoute;
+export const POSTSkinportSync = handleSkinportSyncRoute;
+export const POSTSkinportSyncAndSnapshot = handleSkinportSyncAndSnapshotRoute;
 export const GETLatestPrices = handleLatestPricesQueryRoute;
 export const GETHealth = handleHealthRoute;

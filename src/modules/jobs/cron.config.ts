@@ -7,10 +7,10 @@ export const cronSchedules = {
     recommendation: "Daily at 03:00 Europe/Paris or manual on MVP.",
     timezone: process.env.SNAPSHOT_TIMEZONE ?? DEFAULT_SNAPSHOT_TIMEZONE,
   },
-  latestPrices: {
-    description: "Latest prices sync on a medium cadence.",
-    expression: process.env.LATEST_PRICES_CRON ?? "0 * * * *",
-    recommendation: "Hourly for the sprint MVP.",
+  skinportDailyIngestion: {
+    description: "Complete Skinport ingestion used as the product source of truth.",
+    expression: process.env.SKINPORT_DAILY_INGESTION_CRON ?? "30 1 * * *",
+    recommendation: "Daily at 01:30 Europe/Paris.",
     timezone: process.env.SNAPSHOT_TIMEZONE ?? DEFAULT_SNAPSHOT_TIMEZONE,
   },
   snapshot: {

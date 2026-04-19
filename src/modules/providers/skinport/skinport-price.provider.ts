@@ -3,23 +3,19 @@ import type {
   PriceProviderFetchInput,
   PriceProviderFetchResult,
   PriceProviderWarning,
-  RawPriceProviderItem,
+  PriceSyncTargetItem,
 } from "@/modules/providers/provider.types";
-import type {
-  SkinportPriceProviderConfig,
-  SkinportPriceWindow,
-  SkinportSalesHistoryItem,
-} from "@/modules/providers/skinport/skinport.types";
+import { normalizeSearchText } from "@/modules/catalog/catalog.normalizer";
+import { SkinportClient } from "@/modules/providers/skinport/skinport.client";
+import { mapSkinportRecordToRawPrice } from "@/modules/providers/skinport/skinport.mapper";
+import type { SkinportPriceProviderConfig } from "@/modules/providers/skinport/skinport.types";
 
 const DEFAULT_BASE_URL = "https://api.skinport.com/v1";
 const DEFAULT_APP_ID = 730;
 const DEFAULT_CURRENCY = "USD";
 const DEFAULT_CHUNK_SIZE = 100;
-
-interface ResolvedSkinportPrice {
-  price: number;
-  volume: number;
-}
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+const MAX_PROVIDER_WARNINGS = 100;
 
 function clampPositiveInteger(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -39,62 +35,54 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
   return value.trim().toLowerCase() === "true";
 }
 
-function chunkArray<T>(items: T[], chunkSize: number) {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += chunkSize) {
-    chunks.push(items.slice(index, index + chunkSize));
-  }
-
-  return chunks;
+function capWarnings(warnings: PriceProviderWarning[]) {
+  return warnings.slice(0, MAX_PROVIDER_WARNINGS);
 }
 
-function isFinitePositiveNumber(value: number | null) {
-  return typeof value === "number" && Number.isFinite(value) && value > 0;
+function countWarningsByCode(warnings: PriceProviderWarning[]) {
+  return warnings.reduce<Record<string, number>>((counts, warning) => {
+    counts[warning.code] = (counts[warning.code] ?? 0) + 1;
+
+    return counts;
+  }, {});
 }
 
-function asPositiveNumber(value: number | null): number | null {
-  return isFinitePositiveNumber(value) ? value : null;
-}
+function dedupeSkinportItemsByMarketHashName<T extends { market_hash_name: string; updated_at?: number }>(
+  items: T[],
+) {
+  const map = new Map<string, T>();
 
-function resolveSkinportPrice(
-  windows: Pick<
-    SkinportSalesHistoryItem,
-    "last_24_hours" | "last_7_days" | "last_30_days" | "last_90_days"
-  >,
-): ResolvedSkinportPrice | null {
-  const candidates: SkinportPriceWindow[] = [
-    windows.last_24_hours,
-    windows.last_7_days,
-    windows.last_30_days,
-    windows.last_90_days,
-  ];
+  for (const item of items) {
+    const key = item.market_hash_name.trim();
+    const existing = map.get(key);
 
-  for (const window of candidates) {
-    if (window.volume <= 0) {
-      continue;
-    }
-
-    const median = asPositiveNumber(window.median);
-
-    if (median !== null) {
-      return {
-        price: median,
-        volume: window.volume,
-      };
-    }
-
-    const average = asPositiveNumber(window.avg);
-
-    if (average !== null) {
-      return {
-        price: average,
-        volume: window.volume,
-      };
+    if (!existing || (item.updated_at ?? 0) >= (existing.updated_at ?? 0)) {
+      map.set(key, item);
     }
   }
 
-  return null;
+  return [...map.values()];
+}
+
+function buildUniqueCanonicalTargetMap(items: PriceSyncTargetItem[]) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    const key = normalizeSearchText(item.marketHashName);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const map = new Map<string, PriceSyncTargetItem>();
+
+  for (const item of items) {
+    const key = normalizeSearchText(item.marketHashName);
+
+    if (counts.get(key) === 1) {
+      map.set(key, item);
+    }
+  }
+
+  return map;
 }
 
 export function getSkinportPriceProviderConfig(): SkinportPriceProviderConfig {
@@ -104,125 +92,126 @@ export function getSkinportPriceProviderConfig(): SkinportPriceProviderConfig {
     chunkSize: clampPositiveInteger(process.env.SKINPORT_CHUNK_SIZE, DEFAULT_CHUNK_SIZE),
     currency: process.env.SKINPORT_CURRENCY?.trim().toUpperCase() || DEFAULT_CURRENCY,
     fetchAllSalesHistory: parseBoolean(process.env.SKINPORT_FETCH_ALL_SALES_HISTORY, true),
+    fetchSalesHistory: parseBoolean(process.env.SKINPORT_FETCH_SALES_HISTORY, true),
+    requestTimeoutMs: clampPositiveInteger(
+      process.env.SKINPORT_REQUEST_TIMEOUT_MS,
+      DEFAULT_REQUEST_TIMEOUT_MS,
+    ),
+    tradableOnly: parseBoolean(process.env.SKINPORT_TRADABLE_ONLY, false),
   };
 }
 
 export class SkinportPriceProvider implements PriceProvider {
-  readonly provider = "skinport_sales_history_provider";
+  readonly provider = "skinport_items_provider";
+
+  private readonly client: SkinportClient;
 
   constructor(
     private readonly config: SkinportPriceProviderConfig = getSkinportPriceProviderConfig(),
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+    fetchImpl: typeof fetch = fetch,
+  ) {
+    this.client = new SkinportClient(config, fetchImpl);
+  }
 
   async fetchLatestPrices(input: PriceProviderFetchInput): Promise<PriceProviderFetchResult> {
+    const requestedTargets = input.items.length;
+    const targetMap = new Map(input.items.map((item) => [item.marketHashName.trim(), item]));
+    const canonicalTargetMap = buildUniqueCanonicalTargetMap(input.items);
     const fetchedAt = new Date().toISOString();
-    const uniqueTargets = [...new Map(input.items.map((item) => [item.marketHashName, item])).values()];
-    const salesHistory = this.config.fetchAllSalesHistory
-      ? await this.fetchSalesHistory()
-      : await this.fetchSalesHistoryForTargets(uniqueTargets.map((item) => item.marketHashName));
-    const salesHistoryMap = new Map(
-      salesHistory.map((item) => [item.market_hash_name.trim(), item]),
+    const providerItems = dedupeSkinportItemsByMarketHashName(await this.client.fetchItems());
+    const providerItemsMatchedTargets = providerItems
+      .map((item) => {
+        const exactTarget = targetMap.get(item.market_hash_name.trim());
+
+        if (exactTarget) {
+          return {
+            item,
+            matchType: "exact" as const,
+            target: exactTarget,
+          };
+        }
+
+        const canonicalTarget = canonicalTargetMap.get(normalizeSearchText(item.market_hash_name.trim()));
+
+        if (canonicalTarget) {
+          return {
+            item,
+            matchType: "canonical" as const,
+            target: canonicalTarget,
+          };
+        }
+
+        return null;
+      })
+      .filter((match): match is NonNullable<typeof match> => match !== null);
+    const historyEnabled = this.config.fetchSalesHistory;
+    const historyItems = historyEnabled
+      ? this.config.fetchAllSalesHistory
+        ? await this.client.fetchSalesHistory()
+        : await this.client.fetchSalesHistoryForTargets(
+            providerItemsMatchedTargets.map((entry) => entry.item.market_hash_name.trim()),
+          )
+      : [];
+    const historyMap = new Map(
+      historyItems.map((item) => [item.market_hash_name.trim(), item]),
     );
-    const items: RawPriceProviderItem[] = [];
     const warnings: PriceProviderWarning[] = [];
+    const matchedTargetKeys = new Set(providerItemsMatchedTargets.map((entry) => entry.target.marketHashName.trim()));
+    const matchedExactCount = providerItemsMatchedTargets.filter((entry) => entry.matchType === "exact").length;
+    const matchedCanonicalCount = providerItemsMatchedTargets.filter(
+      (entry) => entry.matchType === "canonical",
+    ).length;
+    const items = providerItemsMatchedTargets
+      .map(({ item: providerItem, target }) => {
+        const mapped = mapSkinportRecordToRawPrice(
+          providerItem,
+          historyMap.get(providerItem.market_hash_name.trim()) ?? null,
+          target,
+          fetchedAt,
+        );
 
-    for (const target of uniqueTargets) {
-      const salesRecord = salesHistoryMap.get(target.marketHashName);
+        if (!mapped) {
+          warnings.push({
+            code: "NO_USABLE_PRICE",
+            marketHashName: providerItem.market_hash_name,
+            message: `Skinport did not expose a usable price for "${providerItem.market_hash_name}".`,
+            variantKey: target.variantKey,
+          });
+        }
 
-      if (!salesRecord) {
+        return mapped;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    for (const target of input.items) {
+      if (!matchedTargetKeys.has(target.marketHashName.trim())) {
         warnings.push({
           code: "ITEM_NOT_FOUND",
           marketHashName: target.marketHashName,
-          message: `Skinport sales history did not return "${target.marketHashName}".`,
+          message: `Skinport /v1/items did not return "${target.marketHashName}".`,
           variantKey: target.variantKey,
         });
-        continue;
       }
-
-      const resolvedPrice = resolveSkinportPrice(salesRecord);
-
-      if (!resolvedPrice) {
-        warnings.push({
-          code: "NO_PRICE_HISTORY",
-          marketHashName: target.marketHashName,
-          message: `Skinport has no usable recent sales price for "${target.marketHashName}".`,
-          variantKey: target.variantKey,
-        });
-        continue;
-      }
-
-      items.push({
-        currency: salesRecord.currency,
-        fetchedAt,
-        market: {
-          enabled: true,
-          name: "Skinport",
-          priority: 80,
-          slug: "skinport",
-        },
-        marketHashName: target.marketHashName,
-        phase: target.phase,
-        price: resolvedPrice.price,
-        quantity: null,
-        sourceUpdatedAt: null,
-        volume: resolvedPrice.volume,
-      });
     }
+
+    const skippedTargets = warnings.length;
+    const warningCodeCounts = countWarningsByCode(warnings);
 
     return {
       items,
       summary: {
-        attemptedTargets: uniqueTargets.length,
-        requestedTargets: input.items.length,
+        attemptedTargets: providerItemsMatchedTargets.length,
+        matchedCanonicalCount,
+        matchedExactCount,
+        providerHistoryRecordsReceived: historyItems.length,
+        providerItemsReceived: providerItems.length,
+        requestedTargets,
         returnedRecords: items.length,
-        skippedTargets: warnings.length,
-        truncatedTargets: 0,
-        warnings,
+        skippedTargets,
+        truncatedTargets: Math.max(0, warnings.length - MAX_PROVIDER_WARNINGS),
+        warningCodeCounts,
+        warnings: capWarnings(warnings),
       },
     };
-  }
-
-  private async fetchSalesHistory() {
-    const response = await this.requestSalesHistory();
-
-    return response;
-  }
-
-  private async fetchSalesHistoryForTargets(targets: string[]) {
-    const results: SkinportSalesHistoryItem[] = [];
-
-    for (const chunk of chunkArray(targets, this.config.chunkSize)) {
-      results.push(...(await this.requestSalesHistory(chunk)));
-    }
-
-    return results;
-  }
-
-  private async requestSalesHistory(targets: string[] = []) {
-    const searchParams = new URLSearchParams({
-      app_id: String(this.config.appId),
-      currency: this.config.currency,
-    });
-
-    if (targets.length > 0) {
-      searchParams.set("market_hash_name", targets.join(","));
-    }
-
-    const response = await this.fetchImpl(
-      `${this.config.baseUrl}/sales/history?${searchParams.toString()}`,
-      {
-        headers: {
-          "Accept-Encoding": "br",
-        },
-        method: "GET",
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Skinport sales history request failed with status ${response.status}.`);
-    }
-
-    return (await response.json()) as SkinportSalesHistoryItem[];
   }
 }

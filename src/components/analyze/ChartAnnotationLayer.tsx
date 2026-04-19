@@ -106,6 +106,8 @@ function ResizableAnnotation({ ann, onRemove }: { ann: Annotation, onRemove: (id
 }
 
 export function ChartAnnotationLayer({ annotations, onRemove, onUpdate }: ChartAnnotationLayerProps) {
+  void onUpdate;
+
   return (
     <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
       {annotations.map((ann) => (

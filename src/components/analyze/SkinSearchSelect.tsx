@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 
-interface SkinItem {
+export interface SkinItem {
   id: string;
   displayName: string;
   imageUrl: string | null;

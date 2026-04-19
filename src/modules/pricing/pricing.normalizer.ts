@@ -19,12 +19,33 @@ const marketRecordSchema = z.object({
 const priceRecordSchema = z.object({
   currency: z.string().trim().min(1).nullable().optional(),
   fetchedAt: z.iso.datetime(),
+  maxPrice: z.number().nonnegative().nullable().optional(),
   market: marketRecordSchema,
   marketHashName: z.string().trim().min(1),
+  meanPrice: z.number().nonnegative().nullable().optional(),
+  medianPrice: z.number().nonnegative().nullable().optional(),
+  minPrice: z.number().nonnegative().nullable().optional(),
   phase: z.string().trim().min(1).nullable().optional(),
   price: z.number().positive(),
   quantity: z.number().int().nonnegative().nullable().optional(),
+  rawPayload: z.record(z.string(), z.unknown()).nullable().optional(),
+  sales24hMedian: z.number().nonnegative().nullable().optional(),
+  sales24hMin: z.number().nonnegative().nullable().optional(),
+  sales24hVolume: z.number().int().nonnegative().nullable().optional(),
+  sales30dMedian: z.number().nonnegative().nullable().optional(),
+  sales30dMin: z.number().nonnegative().nullable().optional(),
+  sales30dVolume: z.number().int().nonnegative().nullable().optional(),
+  sales7dMedian: z.number().nonnegative().nullable().optional(),
+  sales7dMin: z.number().nonnegative().nullable().optional(),
+  sales7dVolume: z.number().int().nonnegative().nullable().optional(),
+  sales90dMedian: z.number().nonnegative().nullable().optional(),
+  sales90dMin: z.number().nonnegative().nullable().optional(),
+  sales90dVolume: z.number().int().nonnegative().nullable().optional(),
+  sourceItemUrl: z.string().trim().url().nullable().optional(),
+  sourceMarketUrl: z.string().trim().url().nullable().optional(),
   sourceUpdatedAt: z.iso.datetime().nullable().optional(),
+  suggestedPrice: z.number().nonnegative().nullable().optional(),
+  variantKeyOverride: z.string().trim().min(1).nullable().optional(),
   volume: z.number().int().nonnegative().nullable().optional(),
 });
 
@@ -40,6 +61,12 @@ function asNullableString(value?: string | null): string | null {
 
 function normalizePriceNumber(price: number): number {
   return Math.round(price * 100) / 100;
+}
+
+function normalizeNullablePriceNumber(price?: number | null): number | null {
+  return typeof price === "number" && Number.isFinite(price) && price >= 0
+    ? normalizePriceNumber(price)
+    : null;
 }
 
 export function normalizeMarketRecord(rawMarket: RawMarketRecord) {
@@ -61,13 +88,33 @@ export function normalizeLatestPrice(rawPrice: RawPriceProviderItem): Normalized
   return {
     currency: (price.currency ?? "USD").trim().toUpperCase(),
     fetchedAt: new Date(price.fetchedAt),
+    maxPrice: normalizeNullablePriceNumber(price.maxPrice),
     market: normalizeMarketRecord(price.market),
     marketHashName,
+    meanPrice: normalizeNullablePriceNumber(price.meanPrice),
+    medianPrice: normalizeNullablePriceNumber(price.medianPrice),
+    minPrice: normalizeNullablePriceNumber(price.minPrice),
     phase,
     price: normalizePriceNumber(price.price),
     quantity: price.quantity ?? null,
+    rawPayload: price.rawPayload ?? null,
+    sales24hMedian: normalizeNullablePriceNumber(price.sales24hMedian),
+    sales24hMin: normalizeNullablePriceNumber(price.sales24hMin),
+    sales24hVolume: price.sales24hVolume ?? null,
+    sales30dMedian: normalizeNullablePriceNumber(price.sales30dMedian),
+    sales30dMin: normalizeNullablePriceNumber(price.sales30dMin),
+    sales30dVolume: price.sales30dVolume ?? null,
+    sales7dMedian: normalizeNullablePriceNumber(price.sales7dMedian),
+    sales7dMin: normalizeNullablePriceNumber(price.sales7dMin),
+    sales7dVolume: price.sales7dVolume ?? null,
+    sales90dMedian: normalizeNullablePriceNumber(price.sales90dMedian),
+    sales90dMin: normalizeNullablePriceNumber(price.sales90dMin),
+    sales90dVolume: price.sales90dVolume ?? null,
+    sourceItemUrl: asNullableString(price.sourceItemUrl),
+    sourceMarketUrl: asNullableString(price.sourceMarketUrl),
     sourceUpdatedAt: price.sourceUpdatedAt ? new Date(price.sourceUpdatedAt) : null,
-    variantKey: buildItemVariantKey(marketHashName, phase),
+    suggestedPrice: normalizeNullablePriceNumber(price.suggestedPrice),
+    variantKey: asNullableString(price.variantKeyOverride) ?? buildItemVariantKey(marketHashName, phase),
     volume: price.volume ?? null,
   };
 }

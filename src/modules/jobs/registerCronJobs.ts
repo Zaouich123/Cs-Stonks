@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger";
 import { isDirectExecution } from "@/lib/runtime";
 import { runCatalogSyncJob } from "@/modules/catalog/jobs/runCatalogSyncJob";
 import { cronSchedules } from "@/modules/jobs/cron.config";
-import { runLatestPricesSyncJob } from "@/modules/pricing/jobs/runLatestPricesSyncJob";
+import { runSkinportDailyIngestionJob } from "@/modules/pricing/jobs/runSkinportDailyIngestionJob";
 import { runDailySnapshotJob } from "@/modules/snapshots/jobs/runDailySnapshotJob";
 
 export function registerCronJobs() {
@@ -18,13 +18,13 @@ export function registerCronJobs() {
     },
   );
 
-  const latestPricesTask = cron.schedule(
-    cronSchedules.latestPrices.expression,
+  const skinportDailyIngestionTask = cron.schedule(
+    cronSchedules.skinportDailyIngestion.expression,
     () => {
-      void runLatestPricesSyncJob("json");
+      void runSkinportDailyIngestionJob();
     },
     {
-      timezone: cronSchedules.latestPrices.timezone,
+      timezone: cronSchedules.skinportDailyIngestion.timezone,
     },
   );
 
@@ -40,7 +40,7 @@ export function registerCronJobs() {
 
   return {
     catalogTask,
-    latestPricesTask,
+    skinportDailyIngestionTask,
     snapshotTask,
   };
 }
@@ -48,7 +48,7 @@ export function registerCronJobs() {
 if (isDirectExecution(import.meta.url)) {
   logger.info("Registering internal cron jobs.", {
     catalog: cronSchedules.catalog,
-    latestPrices: cronSchedules.latestPrices,
+    skinportDailyIngestion: cronSchedules.skinportDailyIngestion,
     snapshot: cronSchedules.snapshot,
   });
 

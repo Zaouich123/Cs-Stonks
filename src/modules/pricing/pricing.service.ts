@@ -45,9 +45,29 @@ export function prepareLatestPriceUpserts(
       fetchedAt: price.fetchedAt,
       itemId: item.id,
       marketId: market.id,
+      maxPrice: price.maxPrice,
+      meanPrice: price.meanPrice,
+      medianPrice: price.medianPrice,
+      minPrice: price.minPrice,
       price: price.price,
       quantity: price.quantity,
+      rawPayload: price.rawPayload,
+      sales24hMedian: price.sales24hMedian,
+      sales24hMin: price.sales24hMin,
+      sales24hVolume: price.sales24hVolume,
+      sales30dMedian: price.sales30dMedian,
+      sales30dMin: price.sales30dMin,
+      sales30dVolume: price.sales30dVolume,
+      sales7dMedian: price.sales7dMedian,
+      sales7dMin: price.sales7dMin,
+      sales7dVolume: price.sales7dVolume,
+      sales90dMedian: price.sales90dMedian,
+      sales90dMin: price.sales90dMin,
+      sales90dVolume: price.sales90dVolume,
+      sourceItemUrl: price.sourceItemUrl,
+      sourceMarketUrl: price.sourceMarketUrl,
       sourceUpdatedAt: price.sourceUpdatedAt,
+      suggestedPrice: price.suggestedPrice,
       volume: price.volume,
     });
   }
@@ -98,10 +118,15 @@ export class LatestPricingSyncService {
 
       logger.info("Latest prices provider fetch completed.", {
         attemptedTargets,
+        matchedCanonicalCount: fetchResult.summary.matchedCanonicalCount ?? 0,
+        matchedExactCount: fetchResult.summary.matchedExactCount ?? attemptedTargets,
         provider: this.provider.provider,
+        providerHistoryRecordsReceived: fetchResult.summary.providerHistoryRecordsReceived,
+        providerItemsReceived: fetchResult.summary.providerItemsReceived,
         receivedRecords: totalReceived,
         skippedTargets: fetchResult.summary.skippedTargets,
         truncatedTargets: fetchResult.summary.truncatedTargets,
+        warningCodeCounts: fetchResult.summary.warningCodeCounts ?? {},
         warnings: providerWarnings.length,
       });
 
@@ -128,10 +153,7 @@ export class LatestPricingSyncService {
       const prepared = prepareLatestPriceUpserts(normalizedPrices, itemLookup, marketLookup);
       const persisted = await this.latestPriceRepository.upsertMany(prepared.ready);
       const invalidRows = errors.length;
-      const totalIgnored =
-        prepared.skippedCount +
-        fetchResult.summary.skippedTargets +
-        fetchResult.summary.truncatedTargets;
+      const totalIgnored = prepared.skippedCount + fetchResult.summary.skippedTargets;
       const failed = invalidRows + totalIgnored;
       const status = failed > 0 ? SyncStatus.PARTIAL : SyncStatus.SUCCESS;
       const durationMs = Date.now() - startedAt;
@@ -153,8 +175,13 @@ export class LatestPricingSyncService {
           invalidRows,
           marketsCreated: marketWrite.created,
           marketsUpdated: marketWrite.updated,
+          matchedCanonicalCount: fetchResult.summary.matchedCanonicalCount ?? 0,
+          matchedExactCount: fetchResult.summary.matchedExactCount ?? attemptedTargets,
           missingItems: prepared.missingItems,
           providerSummary: fetchResult.summary,
+          providerItemsReceived: fetchResult.summary.providerItemsReceived,
+          providerHistoryRecordsReceived: fetchResult.summary.providerHistoryRecordsReceived,
+          providerWarningCodeCounts: fetchResult.summary.warningCodeCounts ?? {},
           totalIgnored,
           totalMapped: normalizedPrices.length,
           upsertedRows: persisted.totalPersisted,
@@ -189,6 +216,9 @@ export class LatestPricingSyncService {
         marketsUpdated: marketWrite.updated,
         missingItems: prepared.missingItems,
         provider: this.provider.provider,
+        providerHistoryRecordsReceived: fetchResult.summary.providerHistoryRecordsReceived ?? 0,
+        providerItemsReceived: fetchResult.summary.providerItemsReceived ?? totalReceived,
+        providerWarningCodeCounts: fetchResult.summary.warningCodeCounts ?? {},
         providerWarnings,
         requestedTargets: targets.length,
         skippedMissingItems: prepared.skippedCount,
