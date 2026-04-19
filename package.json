@@ -30,6 +30,7 @@
     "jobs:scheduler": "node --env-file=.env --import tsx ./src/modules/jobs/registerCronJobs.ts"
   },
   "dependencies": {
+    "@ianlucas/cs2-lib-inspect": "^5.5.0",
     "@prisma/client": "^6.18.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
