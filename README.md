@@ -17,6 +17,14 @@ Le sprint 3 ajoute :
 - l'enrichissement image Steam/CDN stocke en base
 - des metadonnees catalogue supplementaires sur `Item`
 
+Le sprint 6 ajoute :
+
+- une ingestion quotidienne Skinport a grande echelle
+- `GET /v1/items` comme source principale de prix
+- `GET /v1/sales/history` comme enrichissement complementaire
+- un enrichissement de `LatestPrice` pour conserver les metriques Skinport utiles
+- des snapshots journaliers relies a la BDD pour les graphes
+
 ## Stack
 
 - Next.js `15.5.15`
@@ -89,6 +97,17 @@ Ajouts sprint 3 sur `Item` :
 
 `LatestPrice` reste la source de verite quasi temps reel.
 `DailySnapshot` continue de copier `LatestPrice` sans aucun refetch provider.
+
+Ajouts sprint 6 sur `LatestPrice` :
+
+- `minPrice`
+- `maxPrice`
+- `meanPrice`
+- `medianPrice`
+- `suggestedPrice`
+- `sourceItemUrl`
+- `sourceMarketUrl`
+- `rawPayload`
 
 ## Providers
 
@@ -237,7 +256,7 @@ Variables principales :
 - `PRICE_PROVIDER`
 - `ENABLE_INTERNAL_CRON`
 - `CATALOG_CRON`
-- `LATEST_PRICES_CRON`
+- `SKINPORT_DAILY_INGESTION_CRON`
 - `DAILY_SNAPSHOT_CRON`
 - `SNAPSHOT_TIMEZONE`
 - `SNAPSHOT_HOUR`
@@ -248,7 +267,10 @@ Variables du provider reel :
 - `SKINPORT_APP_ID`
 - `SKINPORT_CURRENCY`
 - `SKINPORT_CHUNK_SIZE`
+- `SKINPORT_FETCH_SALES_HISTORY`
 - `SKINPORT_FETCH_ALL_SALES_HISTORY`
+- `SKINPORT_REQUEST_TIMEOUT_MS`
+- `SKINPORT_TRADABLE_ONLY`
 
 - `REAL_PROVIDER_BASE_URL`
 - `REAL_PROVIDER_APP_ID`
@@ -259,7 +281,7 @@ Variables du provider reel :
 - `REAL_PROVIDER_CONCURRENCY`
 - `REAL_PROVIDER_MAX_ITEMS`
 
-Par defaut, `CATALOG_PROVIDER="bymykel"` et `PRICE_PROVIDER="json"`.
+Par defaut, `CATALOG_PROVIDER="bymykel"` et `.env.example` propose `PRICE_PROVIDER="skinport"` pour le flux sprint 6.
 Pour utiliser le fallback local catalogue :
 
 ```bash
@@ -301,7 +323,6 @@ et mappe les types internes :
 
 Les URLs d'images sont resolues et stockees dans `imageUrl` et `steamImageUrl`.
 
-Par defaut, `PRICE_PROVIDER="json"`.
 Pour utiliser Skinport :
 
 ```bash
@@ -310,11 +331,18 @@ PRICE_PROVIDER=skinport
 
 Le provider Skinport :
 
-- utilise `GET /v1/sales/history`
+- utilise `GET /v1/items` comme source principale
+- utilise `GET /v1/sales/history` seulement comme enrichissement complementaire
 - ne demande pas d'API key pour cette sync publique
 - envoie `Accept-Encoding: br` comme demande par la doc officielle
-- choisit un prix a partir de `last_24_hours.median`, puis fallback sur `avg`, puis `7d`, `30d`, `90d`
+- choisit un prix produit stable avec cette priorite :
+  - `median_price`
+  - `mean_price`
+  - `suggested_price`
+  - `min_price`
+  - puis fallback sur les fenetres `24h`, `7d`, `30d`, `90d`
 - persiste le market `skinport`
+- alimente `LatestPrice`, puis `DailySnapshot` devient la source des graphes
 
 Pour utiliser le vrai provider :
 
@@ -374,6 +402,18 @@ Sources prix :
 - `skinport`
 
 Si `source` est omise, la route prend `PRICE_PROVIDER`.
+
+### Sync Skinport recommandee
+
+```bash
+curl -X POST http://localhost:3000/api/internal/sync/skinport
+```
+
+### Sync Skinport puis snapshot
+
+```bash
+curl -X POST http://localhost:3000/api/internal/sync/skinport-and-snapshot
+```
 
 ### Lire tous les derniers prix stockes
 
@@ -443,6 +483,7 @@ Scripts manuels :
 
 - `npm run job:catalog`
 - `npm run job:catalog:refresh-images`
+- `npm run job:skinport`
 - `npm run job:prices`
 - `npm run job:snapshot`
 - `npm run jobs:scheduler`
@@ -450,7 +491,7 @@ Scripts manuels :
 Politique documentee :
 
 - catalogue : `0 3 * * *`
-- latest prices : `0 * * * *`
+- ingestion Skinport : `30 1 * * *`
 - daily snapshot : `5 2 * * *`
 - timezone logique : `Europe/Paris`
 - heure logique de snapshot : `02:05`
@@ -459,18 +500,21 @@ Le scheduler interne reste optionnel tant que `ENABLE_INTERNAL_CRON` vaut `false
 
 ## Validation
 
-Le sprint 2 est valide localement avec :
+Le socle sprint 6 est valide localement avec :
 
 - `npm run prisma:generate`
 - `npm run lint`
 - `npm run test`
-- `npm run build`
+- `npm run job:skinport`
+- `npm run job:snapshot`
 
 Les tests couvrent :
 
 - normalisation catalogue avec `slug` et `searchText`
 - client HTTP Steam, retry et timeout
+- client HTTP Skinport, timeout et construction des requetes
 - mapping du provider reel Steam
+- mapping du provider Skinport et l'enrichissement history
 - resume enrichi de la sync pricing
 - read side `items`, `latest-prices`, `history`
 - snapshot deterministic

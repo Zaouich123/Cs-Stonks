@@ -94,11 +94,19 @@ model LatestPrice {
   itemId          String
   marketId        String
   price           Decimal   @db.Decimal(12, 2)
+  minPrice        Decimal?  @db.Decimal(12, 2)
+  maxPrice        Decimal?  @db.Decimal(12, 2)
+  meanPrice       Decimal?  @db.Decimal(12, 2)
+  medianPrice     Decimal?  @db.Decimal(12, 2)
+  suggestedPrice  Decimal?  @db.Decimal(12, 2)
   currency        String    @db.VarChar(3)
   quantity        Int?
   volume          Int?
+  sourceItemUrl   String?
+  sourceMarketUrl String?
   fetchedAt       DateTime
   sourceUpdatedAt DateTime?
+  rawPayload      Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)

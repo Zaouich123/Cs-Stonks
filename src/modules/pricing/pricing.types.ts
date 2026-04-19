@@ -15,12 +15,20 @@ import type {
 export interface NormalizedLatestPrice {
   currency: string;
   fetchedAt: Date;
+  maxPrice: number | null;
   market: NormalizedMarket;
   marketHashName: string;
+  meanPrice: number | null;
+  medianPrice: number | null;
+  minPrice: number | null;
   phase: string | null;
   price: number;
   quantity: number | null;
+  rawPayload: Record<string, unknown> | null;
+  sourceItemUrl: string | null;
+  sourceMarketUrl: string | null;
   sourceUpdatedAt: Date | null;
+  suggestedPrice: number | null;
   variantKey: string;
   volume: number | null;
 }
@@ -30,9 +38,17 @@ export interface LatestPriceWriteInput {
   fetchedAt: Date;
   itemId: string;
   marketId: string;
+  maxPrice: number | null;
+  meanPrice: number | null;
+  medianPrice: number | null;
+  minPrice: number | null;
   price: number;
   quantity: number | null;
+  rawPayload: Record<string, unknown> | null;
+  sourceItemUrl: string | null;
+  sourceMarketUrl: string | null;
   sourceUpdatedAt: Date | null;
+  suggestedPrice: number | null;
   volume: number | null;
 }
 
@@ -42,14 +58,22 @@ export interface LatestPriceRow {
   fetchedAt: Date;
   itemId: string;
   itemType: ItemType;
+  maxPrice: number | null;
   marketHashName: string;
   marketId: string;
   marketName: string;
   marketSlug: string;
+  meanPrice: number | null;
+  medianPrice: number | null;
+  minPrice: number | null;
   phase: string | null;
   price: number;
   quantity: number | null;
+  rawPayload: Record<string, unknown> | null;
+  sourceItemUrl: string | null;
+  sourceMarketUrl: string | null;
   sourceUpdatedAt: Date | null;
+  suggestedPrice: number | null;
   variantKey: string;
   volume: number | null;
 }
@@ -70,6 +94,9 @@ export interface LatestPricingSyncResult {
   marketsUpdated: number;
   missingItems: string[];
   provider: string;
+  providerHistoryRecordsReceived: number;
+  providerItemsReceived: number;
+  providerWarningCodeCounts: Record<string, number>;
   providerWarnings: PriceProviderWarning[];
   requestedTargets: number;
   skippedMissingItems: number;

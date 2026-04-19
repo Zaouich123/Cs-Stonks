@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { chooseSkinportChartPrice } from "@/modules/pricing/utils/chooseSkinportChartPrice";
 import { SkinportPriceProvider } from "@/modules/providers/skinport/skinport-price.provider";
 
 function createJsonResponse(data: unknown) {
@@ -10,10 +11,93 @@ function createJsonResponse(data: unknown) {
   } as Response;
 }
 
+describe("chooseSkinportChartPrice", () => {
+  it("prefers median price from /v1/items", () => {
+    const chosen = chooseSkinportChartPrice(
+      {
+        created_at: 1,
+        currency: "USD",
+        item_page: "https://skinport.com/item/ak-redline",
+        market_hash_name: "AK-47 | Redline (Field-Tested)",
+        market_page: "https://skinport.com/market/ak-redline",
+        max_price: 46,
+        mean_price: 44.5,
+        median_price: 44.1,
+        min_price: 42.7,
+        quantity: 12,
+        suggested_price: 44.2,
+        updated_at: 2,
+      },
+      null,
+    );
+
+    expect(chosen).toEqual({
+      price: 44.1,
+      source: "items.median_price",
+    });
+  });
+
+  it("falls back to history when item prices are missing", () => {
+    const chosen = chooseSkinportChartPrice(
+      {
+        created_at: 1,
+        currency: "USD",
+        item_page: "https://skinport.com/item/karambit-fade",
+        market_hash_name: "\u2605 Karambit | Fade (Factory New)",
+        market_page: "https://skinport.com/market/karambit-fade",
+        max_price: null,
+        mean_price: null,
+        median_price: null,
+        min_price: null,
+        quantity: 0,
+        suggested_price: null,
+        updated_at: 2,
+      },
+      {
+        currency: "USD",
+        item_page: "https://skinport.com/item/karambit-fade",
+        last_24_hours: { avg: null, max: null, median: null, min: null, volume: 0 },
+        last_30_days: { avg: 2418.91, max: 2999, median: 2342.41, min: 2130, volume: 14 },
+        last_7_days: { avg: 2320.78, max: 2654.31, median: 2249.4, min: 2130, volume: 4 },
+        last_90_days: { avg: 2374, max: 2999, median: 2360.2, min: 2010.33, volume: 44 },
+        market_hash_name: "\u2605 Karambit | Fade (Factory New)",
+        market_page: "https://skinport.com/market/karambit-fade",
+        version: null,
+      },
+    );
+
+    expect(chosen).toEqual({
+      price: 2249.4,
+      source: "history.last_7_days.median",
+    });
+  });
+});
+
 describe("skinport-price.provider", () => {
-  it("maps a Skinport sales history payload into internal raw prices", async () => {
-    const fetchImpl = vi.fn(async () =>
-      createJsonResponse([
+  it("maps Skinport /v1/items into internal raw prices and enriches with history", async () => {
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.includes("/items?")) {
+        return createJsonResponse([
+          {
+            created_at: 1713400000,
+            currency: "USD",
+            item_page: "https://skinport.com/item/ak-redline",
+            market_hash_name: "AK-47 | Redline (Field-Tested)",
+            market_page: "https://skinport.com/market/ak-redline",
+            max_price: 46,
+            mean_price: 44.5,
+            median_price: 44.1,
+            min_price: 42.7,
+            quantity: 12,
+            suggested_price: 44.2,
+            updated_at: 1713403600,
+          },
+        ]);
+      }
+
+      return createJsonResponse([
         {
           currency: "USD",
           item_page: "https://skinport.com/item/ak-redline",
@@ -46,18 +130,21 @@ describe("skinport-price.provider", () => {
             volume: 580,
           },
           market_hash_name: "AK-47 | Redline (Field-Tested)",
-          market_page: "https://skinport.com/market?item=redline",
+          market_page: "https://skinport.com/market/ak-redline",
           version: null,
         },
-      ]),
-    );
+      ]);
+    });
     const provider = new SkinportPriceProvider(
       {
         appId: 730,
         baseUrl: "https://api.skinport.test/v1",
         chunkSize: 100,
         currency: "USD",
-        fetchAllSalesHistory: false,
+        fetchAllSalesHistory: true,
+        fetchSalesHistory: true,
+        requestTimeoutMs: 5000,
+        tradableOnly: false,
       },
       fetchImpl,
     );
@@ -75,92 +162,36 @@ describe("skinport-price.provider", () => {
       ],
     });
 
-    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(result.summary.providerItemsReceived).toBe(1);
+    expect(result.summary.providerHistoryRecordsReceived).toBe(1);
+    expect(result.summary.warningCodeCounts).toEqual({});
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toMatchObject({
       currency: "USD",
       marketHashName: "AK-47 | Redline (Field-Tested)",
+      medianPrice: 44.1,
       price: 44.1,
+      quantity: 12,
+      sourceItemUrl: "https://skinport.com/item/ak-redline",
+      sourceMarketUrl: "https://skinport.com/market/ak-redline",
+      suggestedPrice: 44.2,
       volume: 12,
     });
     expect(result.summary.warnings).toEqual([]);
   });
 
-  it("falls back to a wider window when 24h history is empty", async () => {
+  it("returns ITEM_NOT_FOUND warnings for tracked items not present in /v1/items", async () => {
     const provider = new SkinportPriceProvider(
       {
         appId: 730,
         baseUrl: "https://api.skinport.test/v1",
         chunkSize: 100,
         currency: "USD",
-        fetchAllSalesHistory: false,
-      },
-      vi.fn(async () =>
-        createJsonResponse([
-          {
-            currency: "USD",
-            item_page: "https://skinport.com/item/karambit-fade",
-            last_24_hours: {
-              avg: null,
-              max: null,
-              median: null,
-              min: null,
-              volume: 0,
-            },
-            last_30_days: {
-              avg: 2418.91,
-              max: 2999,
-              median: 2342.41,
-              min: 2130,
-              volume: 14,
-            },
-            last_7_days: {
-              avg: 2320.78,
-              max: 2654.31,
-              median: 2249.4,
-              min: 2130,
-              volume: 4,
-            },
-            last_90_days: {
-              avg: 2374,
-              max: 2999,
-              median: 2360.2,
-              min: 2010.33,
-              volume: 44,
-            },
-            market_hash_name: "★ Karambit | Fade (Factory New)",
-            market_page: "https://skinport.com/market?item=fade",
-            version: null,
-          },
-        ]),
-      ),
-    );
-
-    const result = await provider.fetchLatestPrices({
-      items: [
-        {
-          displayName: "★ Karambit | Fade (Factory New)",
-          itemId: "item_2",
-          marketHashName: "★ Karambit | Fade (Factory New)",
-          phase: null,
-          slug: "karambit-fade-factory-new",
-          variantKey: "★ Karambit | Fade (Factory New)",
-        },
-      ],
-    });
-
-    expect(result.items[0]?.price).toBe(2249.4);
-    expect(result.items[0]?.volume).toBe(4);
-  });
-
-  it("returns a warning when Skinport does not return the item", async () => {
-    const provider = new SkinportPriceProvider(
-      {
-        appId: 730,
-        baseUrl: "https://api.skinport.test/v1",
-        chunkSize: 100,
-        currency: "USD",
-        fetchAllSalesHistory: false,
+        fetchAllSalesHistory: true,
+        fetchSalesHistory: false,
+        requestTimeoutMs: 5000,
+        tradableOnly: false,
       },
       vi.fn(async () => createJsonResponse([])),
     );
@@ -179,6 +210,10 @@ describe("skinport-price.provider", () => {
     });
 
     expect(result.items).toEqual([]);
+    expect(result.summary.providerItemsReceived).toBe(0);
+    expect(result.summary.warningCodeCounts).toEqual({
+      ITEM_NOT_FOUND: 1,
+    });
     expect(result.summary.warnings).toHaveLength(1);
     expect(result.summary.warnings[0]?.code).toBe("ITEM_NOT_FOUND");
   });

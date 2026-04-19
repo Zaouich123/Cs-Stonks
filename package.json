@@ -24,6 +24,7 @@
     "prisma:studio": "prisma studio",
     "job:catalog": "node --env-file=.env --import tsx ./src/modules/catalog/jobs/runCatalogSyncJob.ts",
     "job:catalog:refresh-images": "node --env-file=.env --import tsx ./src/modules/catalog/jobs/runCatalogImageRefreshJob.ts",
+    "job:skinport": "node --env-file=.env --import tsx ./src/modules/pricing/jobs/runSkinportDailyIngestionJob.ts",
     "job:prices": "node --env-file=.env --import tsx ./src/modules/pricing/jobs/runLatestPricesSyncJob.ts",
     "job:snapshot": "node --env-file=.env --import tsx ./src/modules/snapshots/jobs/runDailySnapshotJob.ts",
     "jobs:scheduler": "node --env-file=.env --import tsx ./src/modules/jobs/registerCronJobs.ts"

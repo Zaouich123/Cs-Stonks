@@ -163,10 +163,15 @@ describe("pricing.service", () => {
         ],
         summary: {
           attemptedTargets: 2,
+          providerHistoryRecordsReceived: 0,
+          providerItemsReceived: 2,
           requestedTargets: 2,
           returnedRecords: 2,
           skippedTargets: 1,
-          truncatedTargets: 0,
+          truncatedTargets: 4,
+          warningCodeCounts: {
+            NO_ACTIVE_LISTING: 1,
+          },
           warnings: [
             {
               code: "NO_ACTIVE_LISTING",
@@ -273,6 +278,9 @@ describe("pricing.service", () => {
     expect(result.totalMapped).toBe(2);
     expect(result.totalIgnored).toBe(2);
     expect(result.failed).toBe(2);
+    expect(result.providerWarningCodeCounts).toEqual({
+      NO_ACTIVE_LISTING: 1,
+    });
     expect(result.skippedMissingItems).toBe(1);
     expect(result.providerWarnings).toHaveLength(1);
     expect(result.totalPersisted).toBe(1);
