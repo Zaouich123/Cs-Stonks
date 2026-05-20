@@ -16,7 +16,7 @@ import {
   resolveCatalogProviderSource,
   resolvePriceProviderSource,
 } from "@/modules/providers/provider.types";
-import { SteamPriceProvider } from "@/modules/providers/steam/steam-price.provider";
+import { SteamPriceProvider as DirectSteamPriceProvider } from "@/modules/providers/steam/steam-price.provider";
 import type {
   CatalogProvider,
   CatalogProviderSource,
@@ -52,7 +52,7 @@ function createPriceProvider(source: PriceProviderSource): PriceProvider {
     case "mock":
       return new MockPriceProvider();
     case "real":
-      return new SteamPriceProvider();
+      return new DirectSteamPriceProvider();
     case "skinport":
       return new SkinportPriceProvider();
     default:

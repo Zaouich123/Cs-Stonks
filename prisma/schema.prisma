@@ -186,3 +186,49 @@ model SyncRun {
   @@index([syncType, startedAt])
   @@index([status, startedAt])
 }
+
+model User {
+  id                String             @id @default(cuid())
+  steamId           String             @unique
+  steamPersonaName  String
+  steamProfileUrl   String?
+  steamAvatar       String?
+  steamAvatarMedium String?
+  steamAvatarFull   String?
+  tradeLink         String?
+  phoneNumber       String?
+  phoneCountryCode  String?
+  phoneVerified     Boolean            @default(false)
+  lastLoginAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  sessions          Session[]
+  profileAudits     UserProfileAudit[]
+
+  @@index([steamId])
+}
+
+model Session {
+  id               String   @id @default(cuid())
+  userId           String
+  sessionTokenHash String   @unique
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model UserProfileAudit {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
