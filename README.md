@@ -25,6 +25,15 @@ Le sprint 6 ajoute :
 - un enrichissement de `LatestPrice` pour conserver les metriques Skinport utiles
 - des snapshots journaliers relies a la BDD pour les graphes
 
+Le sprint 8 ajoute :
+
+- une connexion gratuite via Steam OpenID
+- une session locale en cookie HTTP-only et table `Session`
+- un modele `User` relie au SteamID
+- une page `/profile` avec avatar, pseudo, SteamID et URL de profil
+- la sauvegarde locale du trade link et du numero de telephone
+- un resync du profil Steam via Steam Web API
+
 ## Stack
 
 - Next.js `15.5.15`
@@ -80,6 +89,9 @@ Le schema Prisma suit la separation du sprint :
 - `LatestPrice` : dernier etat connu pour `(item, market)`
 - `DailySnapshot` : copie figee des `LatestPrice` a heure logique fixe
 - `SyncRun` : audit de sync catalogue, prix et snapshot
+- `User` : compte local lie au SteamID
+- `Session` : session locale expiree et stockee par token hashe
+- `UserProfileAudit` : trace minimale des actions profil sensibles
 
 Ajouts sprint 2 sur `Item` :
 
@@ -122,18 +134,16 @@ Ajouts sprint 6 sur `LatestPrice` :
 
 - `MockPriceProvider`
 - `JsonPriceProvider`
-- `SteamPriceProvider` via la source `real`
+- `SteamPriceProvider` via la source `real` pour le mode legacy direct Steam
 - `SkinportPriceProvider` via la source `skinport`
 
-Le provider reel :
+Le provider legacy `real` :
 
 - est isole dans `src/modules/providers/steam`
 - utilise un client HTTP dedie
 - applique timeout et retry simple
 - transforme les payloads Steam `priceoverview` en `RawPriceProviderItem`
 - ne persiste jamais directement en base
-
-Le provider reel actuel ne depend d'aucune cle API et peut etre smoke-teste en local.
 
 ## Fixtures locales
 
@@ -250,6 +260,7 @@ Variables principales :
 
 - `DATABASE_URL`
 - `SHADOW_DATABASE_URL`
+- `APP_URL`
 - `CATALOG_PROVIDER`
 - `BYMYKEL_API_BASE_URL`
 - `BYMYKEL_API_LOCALE`
@@ -257,11 +268,12 @@ Variables principales :
 - `ENABLE_INTERNAL_CRON`
 - `CATALOG_CRON`
 - `SKINPORT_DAILY_INGESTION_CRON`
+- `STEAM_DAILY_INGESTION_CRON`
 - `DAILY_SNAPSHOT_CRON`
 - `SNAPSHOT_TIMEZONE`
 - `SNAPSHOT_HOUR`
 
-Variables du provider reel :
+Variables du provider Skinport :
 
 - `SKINPORT_BASE_URL`
 - `SKINPORT_APP_ID`
@@ -272,6 +284,8 @@ Variables du provider reel :
 - `SKINPORT_REQUEST_TIMEOUT_MS`
 - `SKINPORT_TRADABLE_ONLY`
 
+Variables du provider legacy direct Steam :
+
 - `REAL_PROVIDER_BASE_URL`
 - `REAL_PROVIDER_APP_ID`
 - `REAL_PROVIDER_COUNTRY`
@@ -280,6 +294,15 @@ Variables du provider reel :
 - `REAL_PROVIDER_RETRY_COUNT`
 - `REAL_PROVIDER_CONCURRENCY`
 - `REAL_PROVIDER_MAX_ITEMS`
+
+Variables auth Steam :
+
+- `STEAM_OPENID_PROVIDER_URL`
+- `STEAM_WEB_API_BASE_URL`
+- `STEAM_WEB_API_KEY`
+- `SESSION_SECRET`
+- `SESSION_COOKIE_NAME`
+- `SESSION_MAX_AGE_DAYS`
 
 Par defaut, `CATALOG_PROVIDER="bymykel"` et `.env.example` propose `PRICE_PROVIDER="skinport"` pour le flux sprint 6.
 Pour utiliser le fallback local catalogue :
@@ -344,11 +367,52 @@ Le provider Skinport :
 - persiste le market `skinport`
 - alimente `LatestPrice`, puis `DailySnapshot` devient la source des graphes
 
-Pour utiliser le vrai provider :
+Pour utiliser le provider legacy direct Steam :
 
 ```bash
 PRICE_PROVIDER=real
 ```
+
+## Auth Steam et profil utilisateur
+
+Le sprint 8 utilise Steam OpenID 2.0 pour verifier l'identite sans demander le mot de passe Steam.
+
+Routes auth :
+
+- `GET /api/auth/steam/login`
+- `GET /api/auth/steam/callback`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/steam/resync`
+
+Routes profil :
+
+- `GET /api/me`
+- `PATCH /api/me/profile`
+
+Pages :
+
+- `/auth`
+- `/profile`
+
+Flux :
+
+1. l'utilisateur clique sur `Sign in through Steam`
+2. l'app redirige vers `https://steamcommunity.com/openid/login`
+3. Steam revient sur `/api/auth/steam/callback`
+4. l'app verifie `is_valid:true` aupres de Steam
+5. l'app extrait le SteamID depuis `openid.claimed_id`
+6. l'app recupere avatar, pseudo et URL via `GetPlayerSummaries`
+7. l'app upsert `User`, cree `Session`, puis pose un cookie HTTP-only
+
+Pour recuperer avatar et pseudo, il faut une cle Steam Web API gratuite :
+
+```text
+https://steamcommunity.com/dev/apikey
+```
+
+Le numero de telephone est stocke localement mais non verifie par SMS dans ce sprint.
+Le trade link est valide pour n'accepter que `https://steamcommunity.com/tradeoffer/new/?partner=...&token=...`.
 
 ## Routes internes
 
@@ -400,6 +464,7 @@ Sources prix :
 - `mock`
 - `real`
 - `skinport`
+- `steam`
 
 Si `source` est omise, la route prend `PRICE_PROVIDER`.
 
@@ -515,13 +580,14 @@ Les tests couvrent :
 - client HTTP Skinport, timeout et construction des requetes
 - mapping du provider reel Steam
 - mapping du provider Skinport et l'enrichissement history
+- auth Steam OpenID, Steam profile client et validators profil
 - resume enrichi de la sync pricing
 - read side `items`, `latest-prices`, `history`
 - snapshot deterministic
 
 ## Notes
 
-- le provider reel actuel cible Steam Community Market pour une premiere ingestion reelle simple
+- le provider `real` direct Steam est conserve comme fallback technique et pour debug ponctuel
 - l'endpoint public `GET /api/items` est pense pour un frontend futur, pas pour l'admin
 - les handlers API restent minces
 - la logique metier reste dans les services et repositories
