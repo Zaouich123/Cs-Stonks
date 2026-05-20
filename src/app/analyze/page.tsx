@@ -8,6 +8,7 @@ import { AnalyzeToolbar } from "@/components/analyze/AnalyzeToolbar";
 import { ChartAnnotationLayer, Annotation, AnnotationType } from "@/components/analyze/ChartAnnotationLayer";
 import { computeTrendStats } from "@/lib/charts/computeTrendStats";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import type { ChartDataPoint } from "@/lib/charts/chartSampleMapper";
 
 interface SkinItem {
@@ -18,6 +19,7 @@ interface SkinItem {
 }
 
 export default function AnalyzePage() {
+  const { formatMoney, language, t } = usePreferences();
   const [selectedSkin, setSelectedSkin] = React.useState<SkinItem | null>(null);
   const [selectedMarket, setSelectedMarket] = React.useState("General (All)");
   const [period, setPeriod] = React.useState<number>(90);
@@ -25,7 +27,7 @@ export default function AnalyzePage() {
   const chartRef = React.useRef<HTMLDivElement>(null);
 
   const [chartData, setChartData] = React.useState<ChartDataPoint[]>([]);
-  const [marketStats, setMarketStats] = React.useState<{ price: number; quantity: number } | null>(null);
+  const [marketStats, setMarketStats] = React.useState<{ currency: string | null; price: number; quantity: number } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -68,6 +70,7 @@ export default function AnalyzePage() {
     }
 
     interface PriceRow {
+      currency: string;
       marketSlug: string;
       price: number;
       quantity: number | null;
@@ -105,20 +108,23 @@ export default function AnalyzePage() {
         if (pricesRes.data?.prices) {
           let currentPrice = 0;
           let currentQty = 0;
+          let currentCurrency: string | null = null;
           if (marketSlug) {
             const marketData = pricesRes.data.prices.find((p: PriceRow) => p.marketSlug === marketSlug);
             if (marketData) {
               currentPrice = marketData.price;
               currentQty = marketData.quantity || 0;
+              currentCurrency = marketData.currency;
             }
           } else {
             if (pricesRes.data.prices.length > 0) {
               const lowestPrices = pricesRes.data.prices.map((p: PriceRow) => p.price);
               currentPrice = lowestPrices.reduce((a: number, b: number) => a + b, 0) / lowestPrices.length;
               currentQty = pricesRes.data.prices.reduce((acc: number, p: PriceRow) => acc + (p.quantity || 0), 0);
+              currentCurrency = pricesRes.data.prices[0]?.currency ?? null;
             }
           }
-          setMarketStats({ price: currentPrice, quantity: currentQty });
+          setMarketStats({ currency: currentCurrency, price: currentPrice, quantity: currentQty });
         } else {
           setMarketStats(null);
         }
@@ -211,26 +217,38 @@ export default function AnalyzePage() {
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)] ${loading ? "bg-yellow-500 animate-pulse shadow-yellow-500" : "bg-green-500"}`} />
             <span className="text-sm text-[color:var(--color-muted)] font-medium">
-              {loading ? "Fetching Data..." : "Market Active"}
+              {loading ? t("loadingMarketData") : language === "FR" ? "Marché actif" : "Market Active"}
             </span>
           </div>
           <div className="flex items-center gap-8">
             <div className="text-right">
               <p className="text-xs text-[color:var(--color-muted)] uppercase tracking-wider font-semibold">
-                {selectedMarket === "General (All)" ? "Avg Lowest Price" : "Lowest Price"}
+                {selectedMarket === "General (All)"
+                  ? language === "FR"
+                    ? "Prix moyen le plus bas"
+                    : "Avg Lowest Price"
+                  : language === "FR"
+                    ? "Prix le plus bas"
+                    : "Lowest Price"}
               </p>
               <p className="text-xl font-bold text-white">
-                {marketStats?.price ? `$${marketStats.price.toFixed(2)}` : "N/A"}
+                {marketStats?.price ? formatMoney(marketStats.price, marketStats.currency) : "N/A"}
               </p>
             </div>
             <div className="w-px h-10 bg-white/10 hidden md:block" />
             <div className="text-right">
               <p className="text-xs text-[color:var(--color-muted)] uppercase tracking-wider font-semibold">
-                {selectedMarket === "General (All)" ? "Total Market Supply" : "Market Supply"}
+                {selectedMarket === "General (All)"
+                  ? language === "FR"
+                    ? "Offre totale"
+                    : "Total Market Supply"
+                  : language === "FR"
+                    ? "Offre marché"
+                    : "Market Supply"}
               </p>
               <p className="text-xl font-bold text-white">
                 {marketStats?.quantity !== undefined && marketStats.quantity !== null
-                  ? `${marketStats.quantity.toLocaleString()} Items`
+                  ? `${marketStats.quantity.toLocaleString()} ${t("items")}`
                   : "N/A"}
               </p>
             </div>

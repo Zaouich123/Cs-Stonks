@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 interface ItemHistoryPoint {
   price: number;
@@ -57,14 +58,6 @@ function renderDisplayName(value: string) {
   }
 
   return <span className="text-white">{value}</span>;
-}
-
-function formatUsdPrice(price: number | null) {
-  if (price === null) {
-    return null;
-  }
-
-  return `$${price.toFixed(2)}`;
 }
 
 function seedFromString(value: string) {
@@ -231,6 +224,7 @@ function Sparkline({
 }
 
 export function PricesTable({ query, itemType, page, onPageChange }: PricesTableProps) {
+  const { formatMoney, language, t } = usePreferences();
   const [items, setItems] = React.useState<ItemRow[]>([]);
   const [itemTrends, setItemTrends] = React.useState<Record<string, ItemTrendData>>({});
   const [loading, setLoading] = React.useState(true);
@@ -325,7 +319,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
       {!loading && (
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-white/40">
-            {totalItems} item{totalItems !== 1 ? "s" : ""} found
+            {totalItems} {language === "FR" ? "objets trouvés" : `item${totalItems !== 1 ? "s" : ""} found`}
           </p>
           <p className="text-sm text-white/30">
             Page {page} / {totalPages}
@@ -336,7 +330,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-[#4da3ff]" />
-          <span className="ml-3 text-sm text-white/40">Loading market data...</span>
+          <span className="ml-3 text-sm text-white/40">{t("loadingMarketData")}</span>
         </div>
       ) : items.length === 0 ? (
         <div className="py-16 text-center text-sm text-white/30">
@@ -348,10 +342,10 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
         <table className="min-w-[760px] w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-white/5 text-sm text-[color:var(--color-muted)]">
-              <th className="whitespace-nowrap px-4 pb-4 font-medium">Item Name</th>
+              <th className="whitespace-nowrap px-4 pb-4 font-medium">{language === "FR" ? "Nom de l'item" : "Item Name"}</th>
               <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">Type</th>
               <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">Source</th>
-              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">Price</th>
+              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">{language === "FR" ? "Prix" : "Price"}</th>
               <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">7d Trend</th>
             </tr>
           </thead>
@@ -407,7 +401,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
                   </td>
                   <td className="px-4 py-4 text-center font-mono text-white">
                     {item.lowestCurrentPrice !== null ? (
-                      formatUsdPrice(item.lowestCurrentPrice)
+                      formatMoney(item.lowestCurrentPrice, item.lowestCurrentPriceCurrency)
                     ) : (
                       <span className="text-white/30">-</span>
                     )}
@@ -430,7 +424,9 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
       {!loading && totalItems > 0 && (
         <div className="mt-6 flex flex-col gap-3 border-t border-white/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-white/35">
-            Showing page {page} of {totalPages} across {totalItems} items.
+            {language === "FR"
+              ? `Page ${page} sur ${totalPages} pour ${totalItems} objets.`
+              : `Showing page ${page} of ${totalPages} across ${totalItems} items.`}
           </p>
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
@@ -439,7 +435,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
               disabled={!hasPreviousPage}
               className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
             >
-              Previous
+              {language === "FR" ? "Précédent" : "Previous"}
             </button>
             <div className="min-w-[92px] text-center text-sm text-white/55">
               {page} / {totalPages}
@@ -450,7 +446,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
               disabled={!hasNextPage}
               className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
             >
-              Next
+              {language === "FR" ? "Suivant" : "Next"}
             </button>
           </div>
         </div>

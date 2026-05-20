@@ -13,6 +13,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { ChartDataPoint } from "@/lib/charts/chartSampleMapper";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 interface AnalyzeChartPanelProps {
   data: ChartDataPoint[];
@@ -20,6 +21,7 @@ interface AnalyzeChartPanelProps {
 }
 
 export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) {
+  const { currency, formatMoney, language } = usePreferences();
   const color = isPositive ? "#22c55e" : "#ef4444"; // Tailwind green-500 or red-500
   const volumeColor = "#a855f7"; // Purple for volume like the image
 
@@ -33,7 +35,9 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
           {payload.map((entry, index) => (
             <p key={index} className="text-white font-semibold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              {entry.name === 'price' ? `$${entry.value.toFixed(2)}` : `${entry.value} units`}
+              {entry.name === 'price'
+                ? formatMoney(entry.value, "USD")
+                : `${entry.value} ${language === "FR" ? "unités" : "units"}`}
             </p>
           ))}
         </div>
@@ -54,7 +58,9 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
     <div className="w-full flex flex-col mt-8 relative gap-1">
       {/* Price Chart */}
       <div className="flex items-center w-full h-[300px] md:h-[350px]">
-        <span className="text-xs font-semibold text-white/40 -rotate-90 whitespace-nowrap shrink-0 -mr-3">Price in $</span>
+        <span className="text-xs font-semibold text-white/40 -rotate-90 whitespace-nowrap shrink-0 -mr-3">
+          {language === "FR" ? `Prix en ${currency}` : `Price in ${currency}`}
+        </span>
         <div className="flex-1 h-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
@@ -77,7 +83,7 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
                 domain={['auto', 'auto']}
                 stroke="rgba(255,255,255,0.2)"
                 tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => formatMoney(Number(value), "USD")}
                 tickMargin={5}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -97,7 +103,9 @@ export function AnalyzeChartPanel({ data, isPositive }: AnalyzeChartPanelProps) 
 
       {/* Volume Chart */}
       <div className="flex items-center w-full h-[100px] md:h-[120px]">
-        <span className="text-xs font-semibold text-white/40 -rotate-90 whitespace-nowrap shrink-0 -mr-3">Sold units</span>
+        <span className="text-xs font-semibold text-white/40 -rotate-90 whitespace-nowrap shrink-0 -mr-3">
+          {language === "FR" ? "Ventes" : "Sold units"}
+        </span>
         <div className="flex-1 h-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart

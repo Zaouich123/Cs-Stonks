@@ -9,6 +9,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ItemDetailChart, ItemDetailChartPoint } from "@/components/market/ItemDetailChart";
 import { ItemOriginPanel } from "@/components/market/ItemOriginPanel";
 import { ItemVariantSidebar } from "@/components/market/ItemVariantSidebar";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { computeTrendStats } from "@/lib/charts/computeTrendStats";
 
@@ -58,6 +59,7 @@ interface PhaseOption {
 }
 
 interface ItemLatestPrice {
+  currency: string;
   marketName: string;
   marketSlug: string;
   minPrice: number | null;
@@ -184,14 +186,6 @@ function getPhaseLabel(item: Pick<ItemListRow, "displayName" | "marketHashName">
   return match ? source.match(match)?.[0] ?? null : null;
 }
 
-function formatUsd(value: number | null | undefined) {
-  if (value === null || value === undefined) {
-    return "N/A";
-  }
-
-  return `$${value.toFixed(2)}`;
-}
-
 function renderVariantSummary(item: Pick<ItemDetail, "stattrak" | "souvenir"> | null) {
   if (item?.stattrak) {
     return <span className="text-orange-300">StatTrak enabled</span>;
@@ -205,6 +199,7 @@ function renderVariantSummary(item: Pick<ItemDetail, "stattrak" | "souvenir"> | 
 }
 
 export default function MarketItemDetailPage() {
+  const { formatMoney, language } = usePreferences();
   const router = useRouter();
   const params = useParams<{ itemId: string }>();
   const itemId = Array.isArray(params.itemId) ? params.itemId[0] : params.itemId;
@@ -339,6 +334,7 @@ export default function MarketItemDetailPage() {
   }, [familyVariants, item]);
 
   const currentMarketFloor = latestPrices.length > 0 ? latestPrices[0].price : null;
+  const currentMarketFloorCurrency = latestPrices.length > 0 ? latestPrices[0].currency : null;
   const marketSupply = latestPrices.reduce((acc, row) => acc + (row.quantity ?? 0), 0);
   const weeklySold = latestPrices.reduce((acc, row) => acc + (row.sales7dVolume ?? 0), 0);
   const phaseOptions = React.useMemo<PhaseOption[]>(() => {
@@ -442,7 +438,7 @@ export default function MarketItemDetailPage() {
                 displayName={item.displayName}
                 imageUrl={heroImage}
                 imagePhasePreviewLabel={fallbackPhasePreview}
-                priceLabel={formatUsd(currentMarketFloor)}
+                priceLabel={formatMoney(currentMarketFloor, currentMarketFloorCurrency)}
                 rarity={item.rarity}
                 source={item.source}
                 yearLabel={inferYearLabel(item)}
@@ -500,7 +496,9 @@ export default function MarketItemDetailPage() {
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Floor</p>
-                      <p className="mt-2 text-xl font-semibold text-white">{formatUsd(currentMarketFloor)}</p>
+                      <p className="mt-2 text-xl font-semibold text-white">
+                        {formatMoney(currentMarketFloor, currentMarketFloorCurrency)}
+                      </p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Trend</p>
@@ -532,7 +530,9 @@ export default function MarketItemDetailPage() {
                   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-white/45">
                       <BarChart3 className="h-4 w-4" />
-                      <p className="text-[11px] uppercase tracking-[0.22em]">Weekly sales</p>
+                      <p className="text-[11px] uppercase tracking-[0.22em]">
+                        {language === "FR" ? "Ventes 7j" : "Weekly sales"}
+                      </p>
                     </div>
                     <p className="mt-3 text-2xl font-semibold text-white">{weeklySold.toLocaleString()}</p>
                   </div>
