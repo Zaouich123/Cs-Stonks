@@ -2,7 +2,7 @@ import * as React from "react";
 import { TrendStats } from "@/lib/charts/computeTrendStats";
 import { AnalyzePerformanceBadge } from "./AnalyzePerformanceBadge";
 import { AnalyzeFilterSelect } from "./AnalyzeFilterSelect";
-import { MarketSearchSelect } from "./MarketSearchSelect";
+import { MarketSearchSelect, type MarketItem } from "./MarketSearchSelect";
 import { SkinSearchSelect, type SkinItem } from "./SkinSearchSelect";
 
 interface AnalyzeHeaderProps {
@@ -12,7 +12,7 @@ interface AnalyzeHeaderProps {
   period: number;
   onPeriodChange: (days: number) => void;
   onSkinChange: (skinName: string, item?: SkinItem) => void;
-  onMarketChange: (marketName: string) => void;
+  onMarketChange: (marketName: string, market?: MarketItem) => void;
 }
 
 export function AnalyzeHeader({ skinName, marketName, stats, period, onPeriodChange, onSkinChange, onMarketChange }: AnalyzeHeaderProps) {

@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { isDirectExecution } from "@/lib/runtime";
 import { runCatalogSyncJob } from "@/modules/catalog/jobs/runCatalogSyncJob";
 import { cronSchedules } from "@/modules/jobs/cron.config";
+import { runCsfloatPriceListSync } from "@/modules/pricing/jobs/runCsfloatPriceListSync";
 import { runSkinportDailyIngestionJob } from "@/modules/pricing/jobs/runSkinportDailyIngestionJob";
 import { runDailySnapshotJob } from "@/modules/snapshots/jobs/runDailySnapshotJob";
 
@@ -28,6 +29,18 @@ export function registerCronJobs() {
     },
   );
 
+  const csfloatListingsSweepTask = cronSchedules.csfloatListingsSweep.enabled
+    ? cron.schedule(
+        cronSchedules.csfloatListingsSweep.expression,
+        () => {
+          void runCsfloatPriceListSync();
+        },
+        {
+          timezone: cronSchedules.csfloatListingsSweep.timezone,
+        },
+      )
+    : null;
+
   const snapshotTask = cron.schedule(
     cronSchedules.snapshot.expression,
     () => {
@@ -40,6 +53,7 @@ export function registerCronJobs() {
 
   return {
     catalogTask,
+    csfloatListingsSweepTask,
     skinportDailyIngestionTask,
     snapshotTask,
   };
@@ -48,6 +62,7 @@ export function registerCronJobs() {
 if (isDirectExecution(import.meta.url)) {
   logger.info("Registering internal cron jobs.", {
     catalog: cronSchedules.catalog,
+    csfloatListingsSweep: cronSchedules.csfloatListingsSweep,
     skinportDailyIngestion: cronSchedules.skinportDailyIngestion,
     snapshot: cronSchedules.snapshot,
   });

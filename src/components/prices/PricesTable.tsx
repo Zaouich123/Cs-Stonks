@@ -322,7 +322,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
             {totalItems} {language === "FR" ? "objets trouvés" : `item${totalItems !== 1 ? "s" : ""} found`}
           </p>
           <p className="text-sm text-white/30">
-            Page {page} / {totalPages}
+            {t("page")} {page} / {totalPages}
           </p>
         </div>
       )}
@@ -334,19 +334,17 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
         </div>
       ) : items.length === 0 ? (
         <div className="py-16 text-center text-sm text-white/30">
-          {query || itemType
-            ? "No items match your search."
-            : "No items found. Run a catalog sync to populate the database."}
+          {query || itemType ? t("noItemsMatch") : t("noItemsFound")}
         </div>
       ) : (
         <table className="min-w-[760px] w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-white/5 text-sm text-[color:var(--color-muted)]">
-              <th className="whitespace-nowrap px-4 pb-4 font-medium">{language === "FR" ? "Nom de l'item" : "Item Name"}</th>
-              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">Type</th>
+              <th className="whitespace-nowrap px-4 pb-4 font-medium">{t("itemName")}</th>
+              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">{t("type")}</th>
               <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">Source</th>
               <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">{language === "FR" ? "Prix" : "Price"}</th>
-              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">7d Trend</th>
+              <th className="whitespace-nowrap px-4 pb-4 text-center font-medium">7d {t("trend")}</th>
             </tr>
           </thead>
           <tbody>
@@ -435,7 +433,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
               disabled={!hasPreviousPage}
               className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
             >
-              {language === "FR" ? "Précédent" : "Previous"}
+              {t("previous")}
             </button>
             <div className="min-w-[92px] text-center text-sm text-white/55">
               {page} / {totalPages}
@@ -446,7 +444,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
               disabled={!hasNextPage}
               className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
             >
-              {language === "FR" ? "Suivant" : "Next"}
+              {t("next")}
             </button>
           </div>
         </div>

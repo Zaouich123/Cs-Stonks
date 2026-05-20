@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { isDiscontinuedCase } from "@/lib/cases/discontinuedCases";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 interface DropCase {
   collection: string | null;
@@ -18,24 +19,25 @@ interface ItemOriginPanelProps {
 }
 
 export function ItemOriginPanel({
-  collection,
   dropCases,
   inferredFromFinish = false,
 }: ItemOriginPanelProps) {
+  const { t } = usePreferences();
+
   return (
     <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,#08111f_0%,#050b16_100%)] p-6 md:p-8">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4da3ff]">Origin</p>
-            <h3 className="mt-3 text-2xl font-semibold text-white">Drop cases</h3>
+            <h3 className="mt-3 text-2xl font-semibold text-white">{t("dropCases")}</h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
-              Which cases are most likely to drop this item.
+              {t("dropCasesDescription")}
             </p>
           </div>
           {inferredFromFinish ? (
             <span className="rounded-full border border-[#4da3ff]/20 bg-[#093066]/25 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[#9cc9ff]">
-              Finish inferred
+              {t("finishInferred")}
             </span>
           ) : null}
         </div>
@@ -54,11 +56,11 @@ export function ItemOriginPanel({
                 >
                   {discontinued ? (
                     <span className="absolute right-3 top-3 rounded-full border border-rose-400/20 bg-rose-500/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-300">
-                      Discontinued
+                      {t("discontinued")}
                     </span>
                   ) : (
                     <span className="absolute right-3 top-3 rounded-full border border-emerald-400/20 bg-emerald-500/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                      Active
+                      {t("active")}
                     </span>
                   )}
 
@@ -72,7 +74,7 @@ export function ItemOriginPanel({
                           className="max-h-full w-auto object-contain transition-transform duration-300 group-hover:scale-[1.08]"
                         />
                       ) : (
-                        <span className="text-[10px] uppercase tracking-[0.18em] text-white/25">No image</span>
+                        <span className="text-[10px] uppercase tracking-[0.18em] text-white/25">{t("noImage")}</span>
                       )}
                     </div>
 
@@ -86,7 +88,7 @@ export function ItemOriginPanel({
           </div>
         ) : (
           <p className="text-sm leading-6 text-white/45">
-            No drop case has been mapped for this item yet.
+            {t("noDropCases")}
           </p>
         )}
       </div>
