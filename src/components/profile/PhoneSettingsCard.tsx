@@ -5,6 +5,7 @@ import { Check, Loader2, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 async function updatePhone(phoneCountryCode: string, phoneNumber: string) {
   const response = await fetch("/api/me/profile", {
@@ -33,6 +34,7 @@ export function PhoneSettingsCard({
   initialPhoneNumber: string | null;
   phoneVerified: boolean;
 }) {
+  const { language, t } = usePreferences();
   const [countryCode, setCountryCode] = useState(initialPhoneCountryCode ?? "+33");
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber ?? "");
   const [message, setMessage] = useState<string | null>(null);
@@ -46,10 +48,10 @@ export function PhoneSettingsCard({
     try {
       await updatePhone(countryCode, phoneNumber);
       setStatus("success");
-      setMessage("Phone number saved.");
+      setMessage(t("phoneNumberSaved"));
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Unable to save phone number.");
+      setMessage(error instanceof Error ? error.message : language === "FR" ? "Impossible d'enregistrer le numéro." : "Unable to save phone number.");
     }
   }
 
@@ -59,16 +61,16 @@ export function PhoneSettingsCard({
         <div>
           <div className="flex items-center gap-2 text-white">
             <Phone className="size-5 text-[#66c0f4]" />
-            <h2 className="text-xl font-semibold">Phone</h2>
+            <h2 className="text-xl font-semibold">{t("phone")}</h2>
           </div>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            SMS verification is not enabled in this sprint.
+            {t("phoneLead")}
           </p>
         </div>
 
         <div className="grid grid-cols-[6.5rem_1fr] gap-3">
           <label className="block space-y-2">
-            <span className="text-sm text-white/60">Code</span>
+            <span className="text-sm text-white/60">{t("phoneCode")}</span>
             <input
               className="w-full rounded-lg border border-white/10 bg-[#07111f]/80 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-[#66c0f4]/60"
               onChange={(event) => setCountryCode(event.target.value)}
@@ -77,7 +79,7 @@ export function PhoneSettingsCard({
             />
           </label>
           <label className="block space-y-2">
-            <span className="text-sm text-white/60">Number</span>
+            <span className="text-sm text-white/60">{t("number")}</span>
             <input
               className="w-full rounded-lg border border-white/10 bg-[#07111f]/80 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-[#66c0f4]/60"
               onChange={(event) => setPhoneNumber(event.target.value)}
@@ -89,11 +91,11 @@ export function PhoneSettingsCard({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <span className={phoneVerified ? "text-sm text-emerald-300" : "text-sm text-amber-300"}>
-            {phoneVerified ? "Verified" : "Not verified"}
+            {phoneVerified ? t("phoneVerified") : t("phoneNotVerified")}
           </span>
           <Button className="rounded-lg" disabled={status === "saving"} type="submit">
             {status === "saving" ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            Save
+            {t("save")}
           </Button>
         </div>
 

@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import { Button } from "../ui/Button";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
+  const { t } = usePreferences();
+
   return (
     <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-center px-6 pt-20 md:px-12 lg:flex-row lg:items-center">
       
@@ -17,22 +20,22 @@ export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
 
 
         <h1 className="mb-8 text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Master the <br />
+          {t("homeHeroTitle")} <br />
           <span className="aurora-text-clip py-2">
-            CS2 Market
+            {t("homeHeroKicker")}
           </span>
         </h1>
 
         <p className="mb-10 max-w-xl text-lg text-[#8b9bb4] sm:text-xl leading-relaxed">
-          The premium platform for tracking CS2 skin prices, analyzing market trends, and finding the best investment opportunities in real-time.
+          {t("homeHeroDescription")}
         </p>
 
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <Button variant="primary" size="lg" className="w-full sm:w-auto">
-            Explore Markets
+            {t("exploreMarkets")}
           </Button>
           <Button variant="ghost" size="lg" className="w-full sm:w-auto group">
-            Access API
+            {t("accessApi")}
             <svg
               className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
               fill="none"
@@ -72,7 +75,7 @@ export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
           {/* Floating Skin Image */}
           <motion.img
             src={skinImageUrl}
-            alt="AWP | Dragon Lore Example"
+            alt="AWP | Dragon Lore"
             className="relative z-10 w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
             animate={{
               y: [-15, 15, -15],

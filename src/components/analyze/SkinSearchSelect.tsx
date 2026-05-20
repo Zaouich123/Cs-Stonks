@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Search, ChevronDown, X } from "lucide-react";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export interface SkinItem {
   id: string;
@@ -16,6 +17,7 @@ interface SkinSearchSelectProps {
 }
 
 export function SkinSearchSelect({ value, onChange }: SkinSearchSelectProps) {
+  const { language, t } = usePreferences();
   const [isOpen, setIsOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [allItems, setAllItems] = React.useState<SkinItem[]>([]);
@@ -116,7 +118,7 @@ export function SkinSearchSelect({ value, onChange }: SkinSearchSelectProps) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search skins..."
+              placeholder={t("searchSkinsPlaceholder")}
               className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/30"
             />
             {query && (
@@ -129,7 +131,9 @@ export function SkinSearchSelect({ value, onChange }: SkinSearchSelectProps) {
 
           <div className="max-h-[320px] overflow-y-auto py-1">
             {searchResults.length === 0 && !loading && (
-              <p className="text-center text-white/30 text-sm py-6">No skins found</p>
+              <p className="text-center text-white/30 text-sm py-6">
+                {language === "FR" ? "Aucun skin trouvé" : "No skins found"}
+              </p>
             )}
             {searchResults.map((item) => {
               const imgSrc = getImgSrc(item);

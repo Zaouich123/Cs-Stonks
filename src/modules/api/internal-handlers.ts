@@ -3,6 +3,7 @@ import { z } from "zod";
 import { handleRouteError, readOptionalJson, successResponse } from "@/lib/api";
 import {
   createCatalogSyncService,
+  createCsfloatIngestionService,
   createDailySnapshotService,
   createHealthQueryService,
   createLatestPricingQueryService,
@@ -36,6 +37,14 @@ const snapshotRequestSchema = z
     snapshotHour: z.string().trim().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
     timeZone: z.string().trim().min(1).optional(),
     triggerSource: z.string().trim().min(1).optional(),
+  })
+  .default({});
+
+const csfloatSyncRequestSchema = z
+  .object({
+    cursor: z.string().trim().min(1).nullable().optional(),
+    marketHashNames: z.array(z.string().trim().min(1)).optional(),
+    mode: z.enum(["price-list", "sweep", "targeted"]).optional(),
   })
   .default({});
 
@@ -104,6 +113,40 @@ export async function handleSkinportSyncAndSnapshotRoute() {
   }
 }
 
+export async function handleCsfloatSyncRoute(request: Request) {
+  try {
+    const body = csfloatSyncRequestSchema.parse(await readOptionalJson(request));
+    const result = await createCsfloatIngestionService().sync(body);
+
+    return successResponse(result, 200);
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
+export async function handleCsfloatSyncAndSnapshotRoute(request: Request) {
+  try {
+    const body = csfloatSyncRequestSchema.parse(await readOptionalJson(request));
+    const latestPrices = await createCsfloatIngestionService().sync({
+      ...body,
+      mode: body.mode ?? "price-list",
+    });
+    const snapshot = await createDailySnapshotService().createDailySnapshot({
+      triggerSource: "csfloat_ingestion",
+    });
+
+    return successResponse(
+      {
+        latestPrices,
+        snapshot,
+      },
+      200,
+    );
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
 export async function handleLatestPricesQueryRoute(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -141,5 +184,7 @@ export const POSTPricesSync = handleLatestPricesSyncRoute;
 export const POSTDailySnapshot = handleDailySnapshotRoute;
 export const POSTSkinportSync = handleSkinportSyncRoute;
 export const POSTSkinportSyncAndSnapshot = handleSkinportSyncAndSnapshotRoute;
+export const POSTCsfloatSync = handleCsfloatSyncRoute;
+export const POSTCsfloatSyncAndSnapshot = handleCsfloatSyncAndSnapshotRoute;
 export const GETLatestPrices = handleLatestPricesQueryRoute;
 export const GETHealth = handleHealthRoute;

@@ -34,6 +34,14 @@ Le sprint 8 ajoute :
 - la sauvegarde locale du trade link et du numero de telephone
 - un resync du profil Steam via Steam Web API
 
+Le sprint 9 ajoute :
+
+- une ingestion officielle CSFloat basee sur `GET /api/v1/listings/price-list`
+- une aggregation locale des listings actifs par `market_hash_name`
+- un prix `lowest ask` stocke dans `LatestPrice` pour le market `csfloat`
+- trois modes de sync : price-list global, sweep listings pagine et targeted refresh
+- des snapshots qui continuent de lire uniquement la BDD locale
+
 ## Stack
 
 - Next.js `15.5.15`
@@ -69,6 +77,7 @@ src
     markets
     pricing
     providers
+      csfloat
       steam
     snapshots
     sync-runs
@@ -85,7 +94,7 @@ prisma
 Le schema Prisma suit la separation du sprint :
 
 - `Item` : variante vendable unique du catalogue
-- `Market` : source de prix comme `steam`, `skinport`, `csfloat`
+- `Market` : source de prix comme `steam`, `skinport`, `csfloat`, `dmarket`, `waxpeer`, `white-market`
 - `LatestPrice` : dernier etat connu pour `(item, market)`
 - `DailySnapshot` : copie figee des `LatestPrice` a heure logique fixe
 - `SyncRun` : audit de sync catalogue, prix et snapshot
@@ -136,6 +145,10 @@ Ajouts sprint 6 sur `LatestPrice` :
 - `JsonPriceProvider`
 - `SteamPriceProvider` via la source `real` pour le mode legacy direct Steam
 - `SkinportPriceProvider` via la source `skinport`
+- `CsfloatListingsProvider` via le pipeline dedie `csfloat_listings`
+- `DmarketPriceProvider` via la source `dmarket`
+- `WaxpeerPriceProvider` via la source `waxpeer`
+- `WhiteMarketPriceProvider` via la source `white-market`
 
 Le provider legacy `real` :
 
@@ -144,6 +157,22 @@ Le provider legacy `real` :
 - applique timeout et retry simple
 - transforme les payloads Steam `priceoverview` en `RawPriceProviderItem`
 - ne persiste jamais directement en base
+
+Le provider CSFloat :
+
+- utilise uniquement l'API officielle `https://csfloat.com/api/v1`
+- appelle `GET /listings/price-list` pour la couverture globale et `GET /listings` pour les modes sweep/targeted
+- ne fait aucun scraping HTML et n'expose jamais la cle au frontend
+- convertit les prix en cents vers des montants Decimal en USD (`price / 100`)
+- agrege les listings actifs par `market_hash_name`
+- stocke `LatestPrice.price = lowest ask` et `LatestPrice.quantity = nombre de listings actifs observes`
+
+Les providers multi-market :
+
+- `dmarket` utilise l'endpoint officiel d'agregation par titres exacts et convertit les cents en USD
+- `waxpeer` lit l'export global `/v1/prices?game=csgo` et convertit `min` depuis les cents
+- `white-market` lit l'export global `https://export.white.market/v1/prices/730.json`
+- tous passent par `LatestPricingSyncService`, donc ils alimentent les memes tables `Market` et `LatestPrice`
 
 ## Fixtures locales
 
@@ -269,6 +298,7 @@ Variables principales :
 - `CATALOG_CRON`
 - `SKINPORT_DAILY_INGESTION_CRON`
 - `STEAM_DAILY_INGESTION_CRON`
+- `CSFLOAT_LISTINGS_SWEEP_CRON`
 - `DAILY_SNAPSHOT_CRON`
 - `SNAPSHOT_TIMEZONE`
 - `SNAPSHOT_HOUR`
@@ -284,6 +314,36 @@ Variables du provider Skinport :
 - `SKINPORT_REQUEST_TIMEOUT_MS`
 - `SKINPORT_TRADABLE_ONLY`
 
+Variables du provider CSFloat :
+
+- `CSFLOAT_API_BASE_URL`
+- `CSFLOAT_API_KEY`
+- `CSFLOAT_SYNC_ENABLED`
+- `CSFLOAT_CURRENCY`
+- `CSFLOAT_TIMEOUT_MS`
+- `CSFLOAT_LISTINGS_LIMIT`
+- `CSFLOAT_MAX_PAGES_PER_RUN`
+- `CSFLOAT_DELAY_MS`
+- `CSFLOAT_MAX_RETRIES`
+- `CSFLOAT_BACKOFF_MS`
+- `CSFLOAT_TARGETED_REFRESH_ENABLED`
+- `CSFLOAT_LISTINGS_SWEEP_CRON`
+
+Variables des providers multi-market :
+
+- `DMARKET_BASE_URL`
+- `DMARKET_GAME_ID`
+- `DMARKET_CURRENCY`
+- `DMARKET_BATCH_SIZE`
+- `DMARKET_DELAY_MS`
+- `DMARKET_REQUEST_TIMEOUT_MS`
+- `WAXPEER_BASE_URL`
+- `WAXPEER_GAME`
+- `WAXPEER_CURRENCY`
+- `WAXPEER_REQUEST_TIMEOUT_MS`
+- `WHITE_MARKET_EXPORT_URL`
+- `WHITE_MARKET_CURRENCY`
+- `WHITE_MARKET_REQUEST_TIMEOUT_MS`
 Variables du provider legacy direct Steam :
 
 - `REAL_PROVIDER_BASE_URL`
@@ -366,6 +426,52 @@ Le provider Skinport :
   - puis fallback sur les fenetres `24h`, `7d`, `30d`, `90d`
 - persiste le market `skinport`
 - alimente `LatestPrice`, puis `DailySnapshot` devient la source des graphes
+
+Pour utiliser CSFloat :
+
+```bash
+CSFLOAT_API_KEY=ta_cle_csfloat
+CSFLOAT_SYNC_ENABLED=true
+npm run job:csfloat
+```
+
+La cle se cree depuis le profil CSFloat, dans la zone developpeur. Elle doit rester dans `.env`, jamais dans du code ni dans une variable `NEXT_PUBLIC_*`.
+
+Le pipeline CSFloat :
+
+- garantit l'existence du market `csfloat`
+- utilise `price-list` pour recuperer les prix agreges en bulk
+- garde un mode sweep pagine avec cursor opaque pour debug/listings individuels
+- respecte `CSFLOAT_LISTINGS_LIMIT`, `CSFLOAT_MAX_PAGES_PER_RUN` et `CSFLOAT_DELAY_MS`
+- gere les erreurs HTTP, les timeouts, les `429` et `Retry-After`
+- reprend le dernier `nextCursor` stocke dans `SyncRun.metadata`
+- propose un mode cible pour un item precis via `marketHashNames`
+- mappe les items par egalite stricte sur `market_hash_name`
+- continue la sync meme si certains listings ne matchent aucun item du catalogue
+
+Exemple targeted refresh :
+
+```bash
+npm run job:csfloat:targeted -- "AK-47 | Redline (Field-Tested)"
+```
+
+Important : CSFloat est listing-based. Le prix stocke represente le lowest ask actif observe, pas une vente realisee.
+
+Pour utiliser les providers multi-market :
+
+```bash
+npm run job:dmarket
+npm run job:waxpeer
+npm run job:white-market
+```
+
+La route generique accepte aussi ces sources :
+
+```bash
+curl -X POST "http://localhost:3000/api/internal/sync/prices" \
+  -H "Content-Type: application/json" \
+  -d "{\"source\":\"waxpeer\"}"
+```
 
 Pour utiliser le provider legacy direct Steam :
 
@@ -464,7 +570,6 @@ Sources prix :
 - `mock`
 - `real`
 - `skinport`
-- `steam`
 
 Si `source` est omise, la route prend `PRICE_PROVIDER`.
 
@@ -478,6 +583,32 @@ curl -X POST http://localhost:3000/api/internal/sync/skinport
 
 ```bash
 curl -X POST http://localhost:3000/api/internal/sync/skinport-and-snapshot
+```
+
+### Sync CSFloat
+
+Sync globale recommandee via `price-list` :
+
+```bash
+curl -X POST http://localhost:3000/api/internal/sync/csfloat \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"price-list\"}"
+```
+
+Targeted refresh pour un ou plusieurs items :
+
+```bash
+curl -X POST http://localhost:3000/api/internal/sync/csfloat \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"targeted\",\"marketHashNames\":[\"AK-47 | Redline (Field-Tested)\"]}"
+```
+
+Price-list puis snapshot depuis la BDD :
+
+```bash
+curl -X POST http://localhost:3000/api/internal/sync/csfloat-and-snapshot \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"price-list\"}"
 ```
 
 ### Lire tous les derniers prix stockes
@@ -548,6 +679,10 @@ Scripts manuels :
 
 - `npm run job:catalog`
 - `npm run job:catalog:refresh-images`
+- `npm run job:csfloat`
+- `npm run job:csfloat:sweep`
+- `npm run job:csfloat:targeted -- "AK-47 | Redline (Field-Tested)"`
+- `npm run job:csfloat:snapshot`
 - `npm run job:skinport`
 - `npm run job:prices`
 - `npm run job:snapshot`
@@ -557,6 +692,7 @@ Politique documentee :
 
 - catalogue : `0 3 * * *`
 - ingestion Skinport : `30 1 * * *`
+- price-list CSFloat : `20 * * * *`
 - daily snapshot : `5 2 * * *`
 - timezone logique : `Europe/Paris`
 - heure logique de snapshot : `02:05`
@@ -570,6 +706,7 @@ Le socle sprint 6 est valide localement avec :
 - `npm run prisma:generate`
 - `npm run lint`
 - `npm run test`
+- `npm run job:csfloat` avec `CSFLOAT_API_KEY` configuree
 - `npm run job:skinport`
 - `npm run job:snapshot`
 
@@ -578,8 +715,10 @@ Les tests couvrent :
 - normalisation catalogue avec `slug` et `searchText`
 - client HTTP Steam, retry et timeout
 - client HTTP Skinport, timeout et construction des requetes
+- client HTTP CSFloat, Authorization, cursor, 429 et construction des requetes
 - mapping du provider reel Steam
 - mapping du provider Skinport et l'enrichissement history
+- mapping CSFloat cents -> USD, aggregation lowest ask et service d'ingestion
 - auth Steam OpenID, Steam profile client et validators profil
 - resume enrichi de la sync pricing
 - read side `items`, `latest-prices`, `history`

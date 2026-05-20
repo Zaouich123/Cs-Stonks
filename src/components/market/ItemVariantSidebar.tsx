@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 interface Option {
   active: boolean;
@@ -172,6 +173,7 @@ function OptionButton({ active, disabled, label, onClick }: Option) {
 }
 
 function PhaseCard({ active, disabled, href, imageUrl, label, onClick, phasePreviewLabel }: Option) {
+  const { t } = usePreferences();
   const visual = getPhasePreviewVisual(phasePreviewLabel ?? label);
 
   const classes = `group flex min-w-0 flex-col items-center rounded-[1.2rem] border p-2.5 text-center transition-all ${
@@ -198,7 +200,7 @@ function PhaseCard({ active, disabled, href, imageUrl, label, onClick, phasePrev
             style={{ filter: visual.filter }}
           />
         ) : (
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/25">No image</div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-white/25">{t("noImage")}</div>
         )}
       </div>
       <span className="mt-2 line-clamp-2 text-xs font-medium leading-5 text-white/72">{label}</span>
@@ -264,6 +266,7 @@ export function ItemVariantSidebar({
   wearOptions,
   yearLabel,
 }: ItemVariantSidebarProps) {
+  const { t } = usePreferences();
   const heroVisual = getPhasePreviewVisual(imagePhasePreviewLabel);
 
   return (
@@ -271,7 +274,7 @@ export function ItemVariantSidebar({
       <div className="relative overflow-hidden px-6 pb-6 pt-6">
         <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(77,163,255,0.22),transparent_66%)]" />
         <div className="relative">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4da3ff]">Item Overview</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4da3ff]">{t("itemOverview")}</p>
           <h1 className="mt-3 text-2xl font-semibold leading-tight">{renderVariantText(displayName)}</h1>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {rarity ? (
@@ -302,31 +305,31 @@ export function ItemVariantSidebar({
             />
           ) : (
             <div className="relative flex h-[210px] w-full items-center justify-center rounded-[1.25rem] border border-dashed border-white/10 text-sm text-white/28">
-              No image
+              {t("noImage")}
             </div>
           )}
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Year</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("year")}</p>
             <p className="mt-2 text-lg font-semibold text-white">{yearLabel}</p>
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Floor</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("floor")}</p>
             <p className="mt-2 text-lg font-semibold text-white">{priceLabel}</p>
           </div>
         </div>
 
         {collection ? (
           <div className="mt-4 rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Collection</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("collection")}</p>
             <p className="mt-2 text-base font-medium text-white/82">{collection}</p>
           </div>
         ) : null}
 
         <div className="mt-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Variant</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("variant")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {stattrakOptions.map((option) => (
               <OptionButton key={option.label} {...option} />
@@ -335,7 +338,7 @@ export function ItemVariantSidebar({
         </div>
 
         <div className="mt-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Wear</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("wear")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {wearOptions.map((option) => (
               <OptionButton key={option.label} {...option} />
@@ -345,7 +348,7 @@ export function ItemVariantSidebar({
 
         {phaseOptions.length > 0 ? (
           <div className="mt-6">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Phases</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("phases")}</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
               {phaseOptions.map((option) => (
                 <PhaseCard key={option.label} {...option} />

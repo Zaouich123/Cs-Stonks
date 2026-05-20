@@ -6,10 +6,12 @@ import { AnalyzeHeader } from "@/components/analyze/AnalyzeHeader";
 import { AnalyzeChartPanel } from "@/components/analyze/AnalyzeChartPanel";
 import { AnalyzeToolbar } from "@/components/analyze/AnalyzeToolbar";
 import { ChartAnnotationLayer, Annotation, AnnotationType } from "@/components/analyze/ChartAnnotationLayer";
+import { ChartDrawingLayer, type DrawingPath } from "@/components/analyze/ChartDrawingLayer";
 import { computeTrendStats } from "@/lib/charts/computeTrendStats";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import type { ChartDataPoint } from "@/lib/charts/chartSampleMapper";
+import { ANALYZE_MARKETS, type MarketItem } from "@/components/analyze/MarketSearchSelect";
 
 interface SkinItem {
   id: string;
@@ -21,9 +23,13 @@ interface SkinItem {
 export default function AnalyzePage() {
   const { formatMoney, language, t } = usePreferences();
   const [selectedSkin, setSelectedSkin] = React.useState<SkinItem | null>(null);
-  const [selectedMarket, setSelectedMarket] = React.useState("General (All)");
+  const [selectedMarket, setSelectedMarket] = React.useState<MarketItem>(ANALYZE_MARKETS[0]);
   const [period, setPeriod] = React.useState<number>(90);
   const [annotations, setAnnotations] = React.useState<Annotation[]>([]);
+  const [drawingColor, setDrawingColor] = React.useState("#4da3ff");
+  const [drawingPaths, setDrawingPaths] = React.useState<DrawingPath[]>([]);
+  const [isDrawingEnabled, setIsDrawingEnabled] = React.useState(false);
+  const [redoDrawingPaths, setRedoDrawingPaths] = React.useState<DrawingPath[]>([]);
   const chartRef = React.useRef<HTMLDivElement>(null);
 
   const [chartData, setChartData] = React.useState<ChartDataPoint[]>([]);
@@ -54,7 +60,7 @@ export default function AnalyzePage() {
     fromDate.setDate(fromDate.getDate() - period);
     const toDate = new Date();
 
-    const marketSlug = selectedMarket === "General (All)" ? undefined : selectedMarket.toLowerCase();
+    const marketSlug = selectedMarket.slug === "general" ? undefined : selectedMarket.slug;
 
     const historyUrl = new URL(`/api/items/${selectedSkin.id}/history`, window.location.origin);
     historyUrl.searchParams.set("from", fromDate.toISOString());
@@ -138,8 +144,12 @@ export default function AnalyzePage() {
     if (item) setSelectedSkin(item);
   };
 
-  const handleMarketChange = (marketName: string) => {
-    setSelectedMarket(marketName);
+  const handleMarketChange = (marketName: string, market?: MarketItem) => {
+    const nextMarket =
+      market ??
+      ANALYZE_MARKETS.find((item) => item.name === marketName || item.slug === marketName) ??
+      ANALYZE_MARKETS[0];
+    setSelectedMarket(nextMarket);
   };
 
   const handleAddAnnotation = (type: AnnotationType) => {
@@ -168,6 +178,44 @@ export default function AnalyzePage() {
     setAnnotations([]);
   };
 
+  const handleCommitDrawingPath = React.useCallback((path: DrawingPath) => {
+    setDrawingPaths((prev) => [...prev, path]);
+    setRedoDrawingPaths([]);
+  }, []);
+
+  const handleDrawingColorChange = React.useCallback((color: string) => {
+    setDrawingColor((currentColor) => {
+      const nextColor = color.toLowerCase();
+      return currentColor.toLowerCase() === nextColor ? currentColor : nextColor;
+    });
+  }, []);
+
+  const handleUndoDrawing = React.useCallback(() => {
+    if (drawingPaths.length === 0) {
+      return;
+    }
+
+    const lastPath = drawingPaths[drawingPaths.length - 1];
+    setDrawingPaths(drawingPaths.slice(0, -1));
+    setRedoDrawingPaths((redo) => [lastPath, ...redo]);
+  }, [drawingPaths]);
+
+  const handleRedoDrawing = React.useCallback(() => {
+    if (redoDrawingPaths.length === 0) {
+      return;
+    }
+
+    const [nextPath, ...rest] = redoDrawingPaths;
+    setDrawingPaths((paths) => [...paths, nextPath]);
+    setRedoDrawingPaths(rest);
+  }, [redoDrawingPaths]);
+
+  const handleFullClean = React.useCallback(() => {
+    setAnnotations([]);
+    setDrawingPaths([]);
+    setRedoDrawingPaths([]);
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[color:var(--color-surface)] selection:bg-[#4da3ff]/30 text-white overflow-hidden pb-32">
       <Navbar />
@@ -182,7 +230,7 @@ export default function AnalyzePage() {
 
           <AnalyzeHeader
             skinName={selectedSkin?.displayName || "Loading..."}
-            marketName={selectedMarket}
+            marketName={selectedMarket.name}
             stats={stats}
             period={period}
             onPeriodChange={setPeriod}
@@ -203,11 +251,26 @@ export default function AnalyzePage() {
                 {!loading && "No chart data available for this selection."}
               </div>
             )}
+            <ChartDrawingLayer
+              color={drawingColor}
+              enabled={isDrawingEnabled}
+              onCommitPath={handleCommitDrawingPath}
+              paths={drawingPaths}
+            />
           </div>
 
           <AnalyzeToolbar
+            canRedoDrawing={redoDrawingPaths.length > 0}
+            canUndoDrawing={drawingPaths.length > 0}
+            drawingColor={drawingColor}
+            isDrawingEnabled={isDrawingEnabled}
             onAddAnnotation={handleAddAnnotation}
             onClearAnnotations={handleClearAnnotations}
+            onDrawingColorChange={handleDrawingColorChange}
+            onFullClean={handleFullClean}
+            onRedoDrawing={handleRedoDrawing}
+            onToggleDrawing={() => setIsDrawingEnabled((enabled) => !enabled)}
+            onUndoDrawing={handleUndoDrawing}
             chartRef={chartRef}
           />
         </GlassCard>
@@ -217,13 +280,13 @@ export default function AnalyzePage() {
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)] ${loading ? "bg-yellow-500 animate-pulse shadow-yellow-500" : "bg-green-500"}`} />
             <span className="text-sm text-[color:var(--color-muted)] font-medium">
-              {loading ? t("loadingMarketData") : language === "FR" ? "Marché actif" : "Market Active"}
+              {loading ? t("loadingMarketData") : t("marketActive")}
             </span>
           </div>
           <div className="flex items-center gap-8">
             <div className="text-right">
               <p className="text-xs text-[color:var(--color-muted)] uppercase tracking-wider font-semibold">
-                {selectedMarket === "General (All)"
+                {selectedMarket.slug === "general"
                   ? language === "FR"
                     ? "Prix moyen le plus bas"
                     : "Avg Lowest Price"
@@ -238,7 +301,7 @@ export default function AnalyzePage() {
             <div className="w-px h-10 bg-white/10 hidden md:block" />
             <div className="text-right">
               <p className="text-xs text-[color:var(--color-muted)] uppercase tracking-wider font-semibold">
-                {selectedMarket === "General (All)"
+                {selectedMarket.slug === "general"
                   ? language === "FR"
                     ? "Offre totale"
                     : "Total Market Supply"

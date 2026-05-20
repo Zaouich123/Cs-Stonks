@@ -64,7 +64,7 @@ export function InventoryCard({ item, onShowPrices }: InventoryCardProps) {
           />
         ) : (
           <div className="absolute inset-x-6 bottom-10 top-16 flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-sm text-white/35">
-            No image
+            {t("noImage")}
           </div>
         )}
 

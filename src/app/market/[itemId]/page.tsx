@@ -86,6 +86,14 @@ interface ItemHistoryRow {
   quantity: number | null;
 }
 
+type ChartRange = "7d" | "90d" | "1y";
+
+const chartRangeOptions: Array<{ days: number; label: string; value: ChartRange }> = [
+  { days: 7, label: "7j", value: "7d" },
+  { days: 90, label: "90j", value: "90d" },
+  { days: 365, label: "1an", value: "1y" },
+];
+
 const wearOrder = [
   "Factory New",
   "Minimal Wear",
@@ -141,6 +149,18 @@ function aggregateHistory(rows: ItemHistoryRow[]): ItemDetailChartPoint[] {
     .sort((left, right) => left.date.localeCompare(right.date));
 }
 
+function getChartRangeDays(range: ChartRange) {
+  return chartRangeOptions.find((option) => option.value === range)?.days ?? 90;
+}
+
+function getChartRangeLabel(range: ChartRange, language: "FR" | "EN") {
+  if (range === "1y") {
+    return language === "FR" ? "1an" : "1y";
+  }
+
+  return chartRangeOptions.find((option) => option.value === range)?.label ?? "90j";
+}
+
 function getFlavor(item: Pick<ItemDetail, "souvenir" | "stattrak">) {
   if (item.souvenir) return "souvenir";
   if (item.stattrak) return "stattrak";
@@ -186,20 +206,20 @@ function getPhaseLabel(item: Pick<ItemListRow, "displayName" | "marketHashName">
   return match ? source.match(match)?.[0] ?? null : null;
 }
 
-function renderVariantSummary(item: Pick<ItemDetail, "stattrak" | "souvenir"> | null) {
+function renderVariantSummary(item: Pick<ItemDetail, "stattrak" | "souvenir"> | null, language: "FR" | "EN") {
   if (item?.stattrak) {
-    return <span className="text-orange-300">StatTrak enabled</span>;
+    return <span className="text-orange-300">{language === "FR" ? "StatTrak activé" : "StatTrak enabled"}</span>;
   }
 
   if (item?.souvenir) {
-    return <span className="text-amber-300">Souvenir edition</span>;
+    return <span className="text-amber-300">{language === "FR" ? "Édition Souvenir" : "Souvenir edition"}</span>;
   }
 
-  return <span className="text-white/75">Standard edition</span>;
+  return <span className="text-white/75">{language === "FR" ? "Édition standard" : "Standard edition"}</span>;
 }
 
 export default function MarketItemDetailPage() {
-  const { formatMoney, language } = usePreferences();
+  const { formatMoney, language, t } = usePreferences();
   const router = useRouter();
   const params = useParams<{ itemId: string }>();
   const itemId = Array.isArray(params.itemId) ? params.itemId[0] : params.itemId;
@@ -209,6 +229,8 @@ export default function MarketItemDetailPage() {
   const [latestPrices, setLatestPrices] = React.useState<ItemLatestPrice[]>([]);
   const [originData, setOriginData] = React.useState<ItemOriginData | null>(null);
   const [chartData, setChartData] = React.useState<ItemDetailChartPoint[]>([]);
+  const [chartRange, setChartRange] = React.useState<ChartRange>("90d");
+  const [chartLoading, setChartLoading] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [fallbackPhasePreview, setFallbackPhasePreview] = React.useState<string | null>(null);
 
@@ -220,20 +242,14 @@ export default function MarketItemDetailPage() {
     const controller = new AbortController();
     setLoading(true);
 
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 90);
-
     Promise.all([
       fetch(`/api/items/${itemId}`, { signal: controller.signal }).then((res) => res.json()),
       fetch(`/api/items/${itemId}/origin`, { signal: controller.signal }).then((res) => res.json()),
       fetch(`/api/items/${itemId}/latest-prices?sort=price_asc`, { signal: controller.signal }).then((res) =>
         res.json(),
       ),
-      fetch(`/api/items/${itemId}/history?from=${fromDate.toISOString()}&sort=asc`, {
-        signal: controller.signal,
-      }).then((res) => res.json()),
     ])
-      .then(async ([itemRes, originRes, latestPricesRes, historyRes]) => {
+      .then(async ([itemRes, originRes, latestPricesRes]) => {
         if (controller.signal.aborted || !itemRes.data) {
           return;
         }
@@ -243,7 +259,6 @@ export default function MarketItemDetailPage() {
         setFallbackPhasePreview(nextItem.phase ?? null);
         setOriginData((originRes.data ?? null) as ItemOriginData | null);
         setLatestPrices((latestPricesRes.data?.prices ?? []) as ItemLatestPrice[]);
-        setChartData(aggregateHistory((historyRes.data?.series ?? []) as ItemHistoryRow[]));
 
         const familyQuery = new URLSearchParams({
           limit: "50",
@@ -270,6 +285,39 @@ export default function MarketItemDetailPage() {
 
     return () => controller.abort();
   }, [itemId]);
+
+  React.useEffect(() => {
+    if (!itemId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - getChartRangeDays(chartRange));
+
+    setChartLoading(true);
+
+    fetch(`/api/items/${itemId}/history?from=${fromDate.toISOString()}&sort=asc`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((historyRes) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setChartData(aggregateHistory((historyRes.data?.series ?? []) as ItemHistoryRow[]));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setChartLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [chartRange, itemId]);
 
   const stats = React.useMemo(
     () =>
@@ -401,16 +449,16 @@ export default function MarketItemDetailPage() {
         <main className="mx-auto flex max-w-[92rem] flex-col px-6 pb-24 pt-28 md:px-12 md:pt-36">
           <GlassCard className="p-10">
             <p className="text-sm uppercase tracking-[0.24em] text-white/35">Market item</p>
-            <h1 className="mt-4 text-3xl font-semibold">Item not found</h1>
+            <h1 className="mt-4 text-3xl font-semibold">{t("itemNotFound")}</h1>
             <p className="mt-3 max-w-2xl text-white/55">
-              This item could not be loaded from the current catalog.
+              {t("itemNotFoundDescription")}
             </p>
             <Link
               href="/prices"
               className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/[0.05] hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to market
+              {t("backToMarket")}
             </Link>
           </GlassCard>
         </main>
@@ -426,7 +474,7 @@ export default function MarketItemDetailPage() {
         <div className="mb-6 flex items-center gap-3 text-sm text-white/45">
           <Link href="/prices" className="inline-flex items-center gap-2 transition-colors hover:text-white">
             <ArrowLeft className="h-4 w-4" />
-            Back to market
+            {t("backToMarket")}
           </Link>
         </div>
 
@@ -484,54 +532,84 @@ export default function MarketItemDetailPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4da3ff]">
-                      Price action
+                      {t("priceAction")}
                     </p>
-                    <h2 className="mt-3 text-3xl font-semibold text-white">90 day market curve</h2>
+                    <h2 className="mt-3 text-3xl font-semibold text-white">
+                      {getChartRangeLabel(chartRange, language)} {t("marketCurve")}
+                    </h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-                      Historical market movement for the selected item variant, powered by your daily
-                      snapshots.
+                      {language === "FR"
+                        ? "Mouvement historique du marché pour la variante sélectionnée, alimenté par tes snapshots quotidiens."
+                        : "Historical market movement for the selected item variant, powered by your daily snapshots."}
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Floor</p>
-                      <p className="mt-2 text-xl font-semibold text-white">
-                        {formatMoney(currentMarketFloor, currentMarketFloorCurrency)}
-                      </p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex w-fit rounded-2xl border border-white/8 bg-white/[0.035] p-1">
+                      {chartRangeOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
+                            chartRange === option.value
+                              ? "bg-[#4da3ff] text-[#06101f] shadow-[0_10px_30px_rgba(77,163,255,0.25)]"
+                              : "text-white/50 hover:bg-white/[0.05] hover:text-white"
+                          }`}
+                          onClick={() => setChartRange(option.value)}
+                          type="button"
+                        >
+                          {option.value === "1y" ? getChartRangeLabel(option.value, language) : option.label}
+                        </button>
+                      ))}
                     </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Trend</p>
-                      <p
-                        className={`mt-2 text-xl font-semibold ${
-                          stats.isNeutral ? "text-white" : stats.isPositive ? "text-emerald-300" : "text-rose-300"
-                        }`}
-                      >
-                        {stats.percentageChange >= 0 ? "+" : ""}
-                        {stats.percentageChange.toFixed(1)}%
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">Supply</p>
-                      <p className="mt-2 text-xl font-semibold text-white">{marketSupply.toLocaleString()}</p>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("floor")}</p>
+                        <p className="mt-2 text-xl font-semibold text-white">
+                          {formatMoney(currentMarketFloor, currentMarketFloorCurrency)}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("trend")}</p>
+                        <p
+                          className={`mt-2 text-xl font-semibold ${
+                            stats.isNeutral ? "text-white" : stats.isPositive ? "text-emerald-300" : "text-rose-300"
+                          }`}
+                        >
+                          {stats.percentageChange >= 0 ? "+" : ""}
+                          {stats.percentageChange.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("supply")}</p>
+                        <p className="mt-2 text-xl font-semibold text-white">{marketSupply.toLocaleString()}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {chartData.length > 0 ? (
-                  <ItemDetailChart data={chartData} isPositive={stats.isPositive} />
-                ) : (
-                  <div className="flex h-[320px] items-center justify-center rounded-[1.6rem] border border-white/8 bg-[#07101d] text-sm text-white/35 md:h-[380px]">
-                    No historical data available for this variant yet.
-                  </div>
-                )}
+                <div className="relative">
+                  {chartLoading ? (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[1.6rem] bg-[#07101d]/55 backdrop-blur-sm">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/15 border-t-[#4da3ff]" />
+                    </div>
+                  ) : null}
+
+                  {chartData.length > 0 ? (
+                    <ItemDetailChart data={chartData} isPositive={stats.isPositive} />
+                  ) : (
+                    <div className="flex h-[320px] items-center justify-center rounded-[1.6rem] border border-white/8 bg-[#07101d] text-sm text-white/35 md:h-[380px]">
+                      {t("noHistoricalData")}
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-white/45">
                       <BarChart3 className="h-4 w-4" />
                       <p className="text-[11px] uppercase tracking-[0.22em]">
-                        {language === "FR" ? "Ventes 7j" : "Weekly sales"}
+                        {t("weeklySales")}
                       </p>
                     </div>
                     <p className="mt-3 text-2xl font-semibold text-white">{weeklySold.toLocaleString()}</p>
@@ -539,16 +617,16 @@ export default function MarketItemDetailPage() {
                   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-white/45">
                       <Package2 className="h-4 w-4" />
-                      <p className="text-[11px] uppercase tracking-[0.22em]">Collection</p>
+                      <p className="text-[11px] uppercase tracking-[0.22em]">{t("collection")}</p>
                     </div>
-                    <p className="mt-3 text-lg font-semibold text-white">{item?.collection ?? "Unknown"}</p>
+                    <p className="mt-3 text-lg font-semibold text-white">{item?.collection ?? t("unknown")}</p>
                   </div>
                   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-white/45">
                       <ShieldCheck className="h-4 w-4" />
-                      <p className="text-[11px] uppercase tracking-[0.22em]">Variant key</p>
+                      <p className="text-[11px] uppercase tracking-[0.22em]">{t("variantKey")}</p>
                     </div>
-                    <p className="mt-3 text-sm font-medium">{renderVariantSummary(item)}</p>
+                    <p className="mt-3 text-sm font-medium">{renderVariantSummary(item, language)}</p>
                   </div>
                 </div>
               </div>

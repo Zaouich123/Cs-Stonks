@@ -525,14 +525,14 @@ export const apiDocEndpoints: ApiDocEndpoint[] = [
     bodyParams: [
       {
         name: "source",
-        type: "\"json\" | \"mock\" | \"real\" | \"skinport\"",
-        description: "Optional provider override.",
-        example: "skinport",
+        type: "\"json\" | \"mock\" | \"real\" | \"skinport\" | \"dmarket\" | \"waxpeer\" | \"white-market\"",
+        description: "Optional provider override. Marketplace providers write one latest price row per matched item/market.",
+        example: "waxpeer",
       },
     ],
     requestExample: JSON.stringify(
       {
-        source: "skinport",
+        source: "waxpeer",
       },
       null,
       2,
@@ -602,6 +602,129 @@ export const apiDocEndpoints: ApiDocEndpoint[] = [
     ],
     statusCodes: [
       { code: 200, label: "OK" },
+      { code: 500, label: "Internal Server Error" },
+    ],
+  },
+  {
+    id: "post-sync-csfloat",
+    name: "Run CSFloat ingestion",
+    method: "POST",
+    path: "/api/internal/sync/csfloat",
+    category: "internal-endpoints",
+    description:
+      "Runs the dedicated CSFloat pipeline, using `price-list` for broad coverage or listings for targeted/sweep modes, then stores lowest ask rows in `LatestPrice`.",
+    notes: [
+      "Requires `CSFLOAT_API_KEY` server-side.",
+      "The frontend never calls CSFloat directly; it reads the local database.",
+      "Use `targeted` only for a small list of priority items.",
+    ],
+    bodyParams: [
+      {
+        name: "mode",
+        type: "\"price-list\" | \"sweep\" | \"targeted\"",
+        description: "Price-list fetches CSFloat aggregated prices in bulk; sweep paginates listings; targeted refreshes named market hash names.",
+        example: "price-list",
+      },
+      {
+        name: "marketHashNames",
+        type: "string[]",
+        description: "Required for targeted mode.",
+        example: "AK-47 | Redline (Field-Tested)",
+      },
+      {
+        name: "cursor",
+        type: "string",
+        description: "Optional opaque cursor override for sweep mode.",
+      },
+    ],
+    requestExample: JSON.stringify(
+      {
+        mode: "targeted",
+        marketHashNames: ["AK-47 | Redline (Field-Tested)"],
+      },
+      null,
+      2,
+    ),
+    requestLanguage: "json",
+    responses: [
+      {
+        status: 200,
+        title: "CSFloat sync result",
+        description: "Reports pagination, mapping, and LatestPrice persistence counts.",
+        body: {
+          ok: true,
+          data: {
+            provider: "csfloat_listings",
+            mode: "price-list",
+            status: "SUCCESS",
+            pagesFetched: 1,
+            listingsReceived: 25198,
+            itemsAggregated: 25198,
+            itemsMapped: 24423,
+            itemsUpserted: 24423,
+            nextCursor: null,
+          },
+        },
+      },
+      {
+        status: 400,
+        title: "Missing API key or targeted names",
+        description: "Returned when CSFloat is not configured or targeted mode has no market hash names.",
+        body: {
+          ok: false,
+          error: {
+            message: "CSFLOAT_API_KEY is required to call CSFloat.",
+          },
+        },
+      },
+    ],
+    statusCodes: [
+      { code: 200, label: "OK" },
+      { code: 400, label: "Bad Request" },
+      { code: 500, label: "Internal Server Error" },
+    ],
+  },
+  {
+    id: "post-sync-csfloat-snapshot",
+    name: "Run CSFloat ingestion and snapshot",
+    method: "POST",
+    path: "/api/internal/sync/csfloat-and-snapshot",
+    category: "internal-endpoints",
+    description:
+      "Runs CSFloat ingestion first, then creates a daily snapshot from the local `LatestPrice` table without calling CSFloat again.",
+    requestExample: JSON.stringify(
+      {
+        mode: "price-list",
+      },
+      null,
+      2,
+    ),
+    requestLanguage: "json",
+    responses: [
+      {
+        status: 200,
+        title: "Ingestion and snapshot result",
+        description: "Combines the CSFloat ingestion summary and the snapshot write summary.",
+        body: {
+          ok: true,
+          data: {
+            latestPrices: {
+              provider: "csfloat_listings",
+              itemsUpserted: 416,
+              nextCursor: "opaque-next-cursor",
+            },
+            snapshot: {
+              rowsWritten: 15845,
+              snapshotHour: "02:05",
+              status: "SUCCESS",
+            },
+          },
+        },
+      },
+    ],
+    statusCodes: [
+      { code: 200, label: "OK" },
+      { code: 400, label: "Bad Request" },
       { code: 500, label: "Internal Server Error" },
     ],
   },
