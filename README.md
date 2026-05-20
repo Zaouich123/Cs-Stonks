@@ -52,6 +52,19 @@ Le sprint 9 ajoute :
 - Vitest
 - `node-cron` pour la planification interne optionnelle
 
+## CI/CD
+
+Le sprint 10 ajoute une base CI/CD GitHub Actions adaptee au repo :
+
+- CI sur pull requests vers `develop` et `main`
+- CI sur push vers `develop` et `main`
+- validation Prisma avec PostgreSQL de test
+- lint, typecheck, tests Vitest et build Next.js
+- workflows Vercel preview/production optionnels
+- Dependabot pour GitHub Actions et npm
+
+La documentation complete est disponible dans [`docs/ci-cd.md`](docs/ci-cd.md).
+
 ## Architecture
 
 ```text
