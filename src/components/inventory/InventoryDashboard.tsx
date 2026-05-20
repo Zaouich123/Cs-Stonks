@@ -202,13 +202,13 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
 
       setError(
         message.includes("rate-limiting") || message.includes("429")
-          ? "Steam bloque temporairement les requetes d'inventaire. Attends quelques minutes avant de forcer une nouvelle sync."
+          ? t("inventoryRateLimit")
           : message,
       );
     } finally {
       setLoading(false);
     }
-  }, [initialUser.steamId]);
+  }, [initialUser.steamId, t]);
 
   React.useEffect(() => {
     void loadInventory();
@@ -246,7 +246,7 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
                   hour: "2-digit",
                   minute: "2-digit",
                 }).format(new Date(cache.fetchedAt))}
-                {cache.isStale ? " · cache ancien" : ""}
+                {cache.isStale ? ` · ${t("inventoryStaleCache")}` : ""}
               </p>
             ) : null}
           </div>
@@ -257,7 +257,7 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
               <input
                 className="h-11 w-full rounded-xl border border-white/8 bg-white/[0.045] pl-12 pr-4 text-sm font-semibold text-white outline-none transition placeholder:text-white/38 focus:border-[#4da3ff]/55 focus:bg-white/[0.065]"
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Rechercher des objets"
+                placeholder={t("inventorySearchPlaceholder")}
                 value={query}
               />
             </label>
@@ -292,7 +292,7 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/8 bg-white/[0.035] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/38">Match BDD</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/38">{t("matchedDb")}</p>
             <p className="mt-2 text-2xl font-black text-white">{summary.matchedItems}</p>
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/[0.035] p-4">
@@ -307,14 +307,14 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
 
         {cache.warning ? (
           <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100">
-            {cache.warning} Donnees affichees depuis le dernier cache disponible.
+            {cache.warning} {t("syncInventoryFallback")}
           </div>
         ) : null}
       </section>
 
       {error ? (
         <div className="mt-8 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-6 text-rose-100">
-          <p className="font-bold">Impossible de charger l’inventaire.</p>
+          <p className="font-bold">{t("inventoryLoadError")}</p>
           <p className="mt-2 text-sm text-rose-100/75">{error}</p>
         </div>
       ) : null}
@@ -333,9 +333,9 @@ export function InventoryDashboard({ initialUser }: InventoryDashboardProps) {
       {!loading && !error && visibleItems.length === 0 ? (
         <div className="mt-8 flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/12 bg-white/[0.03] p-8 text-center">
           <PackageOpen className="h-10 w-10 text-white/35" />
-          <p className="mt-4 text-xl font-bold text-white">Aucun objet trouvé.</p>
+          <p className="mt-4 text-xl font-bold text-white">{t("inventoryNoItemsTitle")}</p>
           <p className="mt-2 max-w-xl text-sm text-white/45">
-            Ton inventaire peut être privé, vide, ou la recherche actuelle ne correspond à aucun item.
+            {t("inventoryNoItems")}
           </p>
         </div>
       ) : null}

@@ -1,4 +1,5 @@
 import type { ApiDocParam } from "@/lib/api-docs/api-docs-data";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export function ApiParamsTable({
   title,
@@ -7,6 +8,8 @@ export function ApiParamsTable({
   title: string;
   params: ApiDocParam[];
 }) {
+  const { language, t } = usePreferences();
+
   if (params.length === 0) {
     return null;
   }
@@ -20,9 +23,9 @@ export function ApiParamsTable({
         <table className="min-w-full divide-y divide-white/6 text-left text-sm">
           <thead>
             <tr className="text-white/45">
-              <th className="px-5 py-3 font-medium">Name</th>
-              <th className="px-5 py-3 font-medium">Type</th>
-              <th className="px-5 py-3 font-medium">Required</th>
+              <th className="px-5 py-3 font-medium">{t("name")}</th>
+              <th className="px-5 py-3 font-medium">{t("type")}</th>
+              <th className="px-5 py-3 font-medium">{t("required")}</th>
               <th className="px-5 py-3 font-medium">Description</th>
             </tr>
           </thead>
@@ -39,13 +42,15 @@ export function ApiParamsTable({
                         : "bg-white/8 text-white/55"
                     }`}
                   >
-                    {param.required ? "Yes" : "Optional"}
+                    {param.required ? (language === "FR" ? "Oui" : "Yes") : t("optional")}
                   </span>
                 </td>
                 <td className="px-5 py-4 text-white/72">
                   <p>{param.description}</p>
                   {param.example ? (
-                    <p className="mt-2 font-mono text-xs text-white/40">Example: {param.example}</p>
+                    <p className="mt-2 font-mono text-xs text-white/40">
+                      {language === "FR" ? "Exemple" : "Example"}: {param.example}
+                    </p>
                   ) : null}
                 </td>
               </tr>

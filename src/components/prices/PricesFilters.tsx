@@ -2,20 +2,21 @@
 
 import * as React from "react";
 import { Search, Filter, X, ChevronDown } from "lucide-react";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 const ITEM_TYPES = [
-  { value: "", label: "All Types" },
-  { value: "SKIN", label: "Skins" },
-  { value: "KNIFE", label: "Knives" },
-  { value: "GLOVE", label: "Gloves" },
-  { value: "STICKER", label: "Stickers" },
-  { value: "CASE", label: "Cases" },
-  { value: "AGENT", label: "Agents" },
-  { value: "CHARM", label: "Charms" },
-  { value: "MUSIC_KIT", label: "Music Kits" },
-  { value: "PATCH", label: "Patches" },
-  { value: "TOOL", label: "Tools" },
-  { value: "OTHER", label: "Other" },
+  { value: "", label: { EN: "All Types", FR: "Tous les types" } },
+  { value: "SKIN", label: { EN: "Skins", FR: "Skins" } },
+  { value: "KNIFE", label: { EN: "Knives", FR: "Couteaux" } },
+  { value: "GLOVE", label: { EN: "Gloves", FR: "Gants" } },
+  { value: "STICKER", label: { EN: "Stickers", FR: "Stickers" } },
+  { value: "CASE", label: { EN: "Cases", FR: "Caisses" } },
+  { value: "AGENT", label: { EN: "Agents", FR: "Agents" } },
+  { value: "CHARM", label: { EN: "Charms", FR: "Charms" } },
+  { value: "MUSIC_KIT", label: { EN: "Music Kits", FR: "Musiques" } },
+  { value: "PATCH", label: { EN: "Patches", FR: "Patchs" } },
+  { value: "TOOL", label: { EN: "Tools", FR: "Outils" } },
+  { value: "OTHER", label: { EN: "Other", FR: "Autre" } },
 ];
 
 interface PricesFiltersProps {
@@ -26,6 +27,7 @@ interface PricesFiltersProps {
 }
 
 export function PricesFilters({ query, onQueryChange, itemType, onItemTypeChange }: PricesFiltersProps) {
+  const { language, t } = usePreferences();
   const [showFilters, setShowFilters] = React.useState(false);
   const filterRef = React.useRef<HTMLDivElement>(null);
 
@@ -39,7 +41,7 @@ export function PricesFilters({ query, onQueryChange, itemType, onItemTypeChange
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const activeFilter = ITEM_TYPES.find((t) => t.value === itemType);
+  const activeFilter = ITEM_TYPES.find((type) => type.value === itemType);
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 w-full">
@@ -50,7 +52,7 @@ export function PricesFilters({ query, onQueryChange, itemType, onItemTypeChange
           type="text"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search for an item..."
+          placeholder={t("searchItemPlaceholder")}
           className="w-full bg-[#0d182a]/50 border border-[color:var(--color-border)] rounded-xl pl-11 pr-10 py-3 text-white outline-none focus:border-[#4da3ff]/50 focus:ring-1 focus:ring-[#4da3ff]/50 transition-all text-sm placeholder:text-gray-500"
         />
         {query && (
@@ -74,7 +76,7 @@ export function PricesFilters({ query, onQueryChange, itemType, onItemTypeChange
           }`}
         >
           <Filter className="w-4 h-4" />
-          {activeFilter?.label || "Filters"}
+          {activeFilter?.label[language] || (language === "FR" ? "Filtres" : "Filters")}
           <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
         </button>
 
@@ -93,7 +95,7 @@ export function PricesFilters({ query, onQueryChange, itemType, onItemTypeChange
                     : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                {type.label}
+                {type.label[language]}
               </button>
             ))}
           </div>

@@ -15,11 +15,6 @@ const currencies: Array<{ label: string; shortLabel: CurrencyPreference; value: 
   { label: "EUR (€)", shortLabel: "EUR", value: "EUR" },
 ];
 
-const languages: Array<{ label: string; shortLabel: LanguagePreference; value: LanguagePreference }> = [
-  { label: "Français", shortLabel: "FR", value: "FR" },
-  { label: "English", shortLabel: "EN", value: "EN" },
-];
-
 function PreferenceDropdown<T extends string>({
   align = "left",
   label,
@@ -93,12 +88,16 @@ function PreferenceDropdown<T extends string>({
 }
 
 export function PreferenceMenus() {
-  const { currency, language, setCurrency, setLanguage } = usePreferences();
+  const { currency, language, setCurrency, setLanguage, t } = usePreferences();
+  const languages: Array<{ label: string; shortLabel: LanguagePreference; value: LanguagePreference }> = [
+    { label: t("french"), shortLabel: "FR", value: "FR" },
+    { label: t("english"), shortLabel: "EN", value: "EN" },
+  ];
 
   return (
     <div className="hidden items-center gap-1 rounded-full border border-white/8 bg-white/[0.035] px-1 py-0.5 backdrop-blur md:flex">
       <PreferenceDropdown
-        label="Choisir la devise"
+        label={language === "FR" ? "Choisir la devise" : "Choose currency"}
         onChange={setCurrency}
         options={currencies}
         value={currency}
@@ -106,7 +105,7 @@ export function PreferenceMenus() {
       <div className="h-5 w-px bg-white/8" />
       <PreferenceDropdown
         align="right"
-        label="Choisir la langue"
+        label={language === "FR" ? "Choisir la langue" : "Choose language"}
         onChange={setLanguage}
         options={languages}
         value={language}

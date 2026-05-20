@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Search, ChevronDown, X, Globe } from "lucide-react";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export interface MarketItem {
   id: string;
@@ -10,10 +11,13 @@ export interface MarketItem {
   logoUrl?: string;
 }
 
-const MOCK_MARKETS: MarketItem[] = [
+export const ANALYZE_MARKETS: MarketItem[] = [
   { id: "general", name: "General (All)", slug: "general" },
   { id: "skinport", name: "Skinport", slug: "skinport", logoUrl: "https://skinport.com/static/favicon.ico" },
   { id: "csfloat", name: "CSFloat", slug: "csfloat", logoUrl: "https://csfloat.com/favicon.ico" },
+  { id: "dmarket", name: "DMarket", slug: "dmarket", logoUrl: "https://dmarket.com/favicon.ico" },
+  { id: "waxpeer", name: "WAXPEER", slug: "waxpeer", logoUrl: "https://waxpeer.com/favicon.ico" },
+  { id: "white-market", name: "white.market", slug: "white-market", logoUrl: "https://white.market/favicon.ico" },
 ];
 
 interface MarketSearchSelectProps {
@@ -22,15 +26,18 @@ interface MarketSearchSelectProps {
 }
 
 export function MarketSearchSelect({ value, onChange }: MarketSearchSelectProps) {
+  const { language, t } = usePreferences();
   const [isOpen, setIsOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const filtered = React.useMemo(() => {
-    if (!query.trim()) return MOCK_MARKETS;
+    if (!query.trim()) return ANALYZE_MARKETS;
     const q = query.toLowerCase();
-    return MOCK_MARKETS.filter((m) => m.name.toLowerCase().includes(q));
+    return ANALYZE_MARKETS.filter((m) =>
+      [m.name, m.slug].some((value) => value.toLowerCase().includes(q)),
+    );
   }, [query]);
 
   // Close on outside click
@@ -56,7 +63,8 @@ export function MarketSearchSelect({ value, onChange }: MarketSearchSelectProps)
     setQuery("");
   };
 
-  const currentMarket = MOCK_MARKETS.find((m) => m.name === value) || MOCK_MARKETS[0];
+  const currentMarket =
+    ANALYZE_MARKETS.find((m) => m.name === value || m.slug === value) || ANALYZE_MARKETS[0];
 
   return (
     <div ref={containerRef} className="relative">
@@ -70,7 +78,7 @@ export function MarketSearchSelect({ value, onChange }: MarketSearchSelectProps)
         ) : (
           <Globe className="w-6 h-6 text-[#4da3ff]" />
         )}
-        <span>{value}</span>
+        <span>{currentMarket.name}</span>
         <ChevronDown className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
       </button>
 
@@ -83,7 +91,7 @@ export function MarketSearchSelect({ value, onChange }: MarketSearchSelectProps)
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search markets..."
+              placeholder={t("searchMarketsPlaceholder")}
               className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/30"
             />
             {query && (
@@ -95,14 +103,16 @@ export function MarketSearchSelect({ value, onChange }: MarketSearchSelectProps)
 
           <div className="max-h-[280px] overflow-y-auto py-1">
             {filtered.length === 0 && (
-              <p className="text-center text-white/30 text-sm py-6">No markets found</p>
+              <p className="text-center text-white/30 text-sm py-6">
+                {language === "FR" ? "Aucun market trouvé" : "No markets found"}
+              </p>
             )}
             {filtered.map((market) => (
               <button
                 key={market.id}
                 onClick={() => handleSelect(market)}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
-                  market.name === value
+                  market.name === currentMarket.name
                     ? "bg-[#093066]/40 text-[#4da3ff] font-medium"
                     : "text-white/80 hover:bg-white/5 hover:text-white"
                 }`}

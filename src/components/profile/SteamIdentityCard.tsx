@@ -1,9 +1,13 @@
+"use client";
+
 import { ExternalLink } from "lucide-react";
 
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import { GlassCard } from "@/components/ui/GlassCard";
 import type { SessionUser } from "@/modules/auth/types/auth.types";
 
 export function SteamIdentityCard({ user }: { user: SessionUser }) {
+  const { t } = usePreferences();
   const avatar = user.steamAvatarFull ?? user.steamAvatarMedium ?? user.steamAvatar;
 
   return (
@@ -31,7 +35,7 @@ export function SteamIdentityCard({ user }: { user: SessionUser }) {
 
       <div className="mt-5 space-y-3 border-t border-white/10 pt-5 text-sm">
         <div className="flex items-center justify-between gap-3 text-white/55">
-          <span>Steam profile</span>
+          <span>{t("steamProfile")}</span>
           {user.steamProfileUrl ? (
             <a
               className="inline-flex items-center gap-2 text-[#66c0f4] transition hover:text-white"
@@ -39,17 +43,17 @@ export function SteamIdentityCard({ user }: { user: SessionUser }) {
               rel="noreferrer"
               target="_blank"
             >
-              Open
+              {t("open")}
               <ExternalLink className="size-4" />
             </a>
           ) : (
-            <span className="text-white/35">Missing</span>
+            <span className="text-white/35">{t("unknown")}</span>
           )}
         </div>
         <div className="flex items-center justify-between gap-3 text-white/55">
-          <span>Phone status</span>
+          <span>{t("phoneStatus")}</span>
           <span className={user.phoneVerified ? "text-emerald-300" : "text-amber-300"}>
-            {user.phoneVerified ? "Verified" : "Not verified"}
+            {user.phoneVerified ? t("phoneVerified") : t("phoneNotVerified")}
           </span>
         </div>
       </div>

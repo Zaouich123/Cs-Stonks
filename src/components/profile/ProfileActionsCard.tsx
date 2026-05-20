@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { LogOut, RefreshCw } from "lucide-react";
 
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import type { SessionUser } from "@/modules/auth/types/auth.types";
 
 export function ProfileActionsCard({ user }: { user: SessionUser }) {
+  const { language, t } = usePreferences();
   const [message, setMessage] = useState<string | null>(null);
   const [resyncing, setResyncing] = useState(false);
 
@@ -29,13 +31,13 @@ export function ProfileActionsCard({ user }: { user: SessionUser }) {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error?.message ?? "Unable to resync Steam profile.");
+        throw new Error(payload?.error?.message ?? (language === "FR" ? "Impossible de resynchroniser le profil Steam." : "Unable to resync Steam profile."));
       }
 
-      setMessage("Steam profile synced.");
+      setMessage(t("steamProfileSynced"));
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to resync Steam profile.");
+      setMessage(error instanceof Error ? error.message : language === "FR" ? "Impossible de resynchroniser le profil Steam." : "Unable to resync Steam profile.");
     } finally {
       setResyncing(false);
     }
@@ -45,9 +47,9 @@ export function ProfileActionsCard({ user }: { user: SessionUser }) {
     <GlassCard className="rounded-xl p-5">
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">Actions</h2>
+          <h2 className="text-lg font-semibold text-white">{t("actions")}</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Connected as {user.steamPersonaName}.
+            {language === "FR" ? "Connecté en tant que" : "Connected as"} {user.steamPersonaName}.
           </p>
         </div>
 
@@ -60,11 +62,11 @@ export function ProfileActionsCard({ user }: { user: SessionUser }) {
             variant="secondary"
           >
             <RefreshCw className={resyncing ? "mr-2 size-4 animate-spin" : "mr-2 size-4"} />
-            Resync Steam
+            {t("resyncSteam")}
           </Button>
           <Button className="rounded-lg" onClick={logout} type="button" variant="ghost">
             <LogOut className="mr-2 size-4" />
-            Logout
+            {t("logout")}
           </Button>
         </div>
 

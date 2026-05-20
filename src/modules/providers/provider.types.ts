@@ -1,5 +1,13 @@
 export const catalogProviderSources = ["bymykel", "local_fallback", "json", "mock"] as const;
-export const priceProviderSources = ["json", "mock", "real", "skinport"] as const;
+export const priceProviderSources = [
+  "json",
+  "mock",
+  "real",
+  "skinport",
+  "dmarket",
+  "waxpeer",
+  "white-market",
+] as const;
 
 export type CatalogProviderSource = (typeof catalogProviderSources)[number];
 export type PriceProviderSource = (typeof priceProviderSources)[number];

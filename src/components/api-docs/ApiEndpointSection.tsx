@@ -3,6 +3,7 @@ import { ApiParamsTable } from "@/components/api-docs/ApiParamsTable";
 import { ApiRequestExample } from "@/components/api-docs/ApiRequestExample";
 import { ApiResponseExample } from "@/components/api-docs/ApiResponseExample";
 import { ApiStatusBadge } from "@/components/api-docs/ApiStatusBadge";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import type { ApiDocEndpoint } from "@/lib/api-docs/api-docs-data";
 
 export function ApiEndpointSection({
@@ -10,6 +11,8 @@ export function ApiEndpointSection({
 }: {
   endpoint: ApiDocEndpoint;
 }) {
+  const { t } = usePreferences();
+
   return (
     <section
       className="scroll-mt-28 rounded-[2rem] border border-white/10 bg-[#071123]/78 p-6 shadow-[0_22px_65px_rgba(0,0,0,0.34)] md:p-8"
@@ -38,7 +41,7 @@ export function ApiEndpointSection({
 
         {endpoint.notes?.length ? (
           <div className="rounded-[1.5rem] border border-[#4da3ff]/15 bg-[#093066]/18 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8cc4ff]">Implementation notes</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8cc4ff]">{t("implementationNotes")}</p>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-white/68">
               {endpoint.notes.map((note) => (
                 <li key={note}>{note}</li>
@@ -48,9 +51,9 @@ export function ApiEndpointSection({
         ) : null}
 
         <div className="grid gap-4">
-          <ApiParamsTable params={endpoint.pathParams ?? []} title="Path parameters" />
-          <ApiParamsTable params={endpoint.queryParams ?? []} title="Query parameters" />
-          <ApiParamsTable params={endpoint.bodyParams ?? []} title="JSON body" />
+          <ApiParamsTable params={endpoint.pathParams ?? []} title={t("pathParameters")} />
+          <ApiParamsTable params={endpoint.queryParams ?? []} title={t("queryParameters")} />
+          <ApiParamsTable params={endpoint.bodyParams ?? []} title={t("jsonBody")} />
         </div>
 
         <ApiRequestExample code={endpoint.requestExample} language={endpoint.requestLanguage ?? "bash"} />
@@ -58,7 +61,7 @@ export function ApiEndpointSection({
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-white/8" />
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Responses</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{t("responses")}</p>
           </div>
           <div className="space-y-4">
             {endpoint.responses.map((response) => (

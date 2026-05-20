@@ -13,6 +13,13 @@ export const cronSchedules = {
     recommendation: "Daily at 01:30 Europe/Paris.",
     timezone: process.env.SNAPSHOT_TIMEZONE ?? DEFAULT_SNAPSHOT_TIMEZONE,
   },
+  csfloatListingsSweep: {
+    description: "CSFloat aggregated price-list sync for broad market coverage.",
+    enabled: process.env.CSFLOAT_SYNC_ENABLED === "true",
+    expression: process.env.CSFLOAT_LISTINGS_SWEEP_CRON ?? "20 * * * *",
+    recommendation: "Hourly at minute 20 Europe/Paris when a CSFloat API key is configured.",
+    timezone: process.env.SNAPSHOT_TIMEZONE ?? DEFAULT_SNAPSHOT_TIMEZONE,
+  },
   snapshot: {
     description: "Daily snapshot at a fixed logical hour without fetching providers.",
     expression: process.env.DAILY_SNAPSHOT_CRON ?? "5 2 * * *",

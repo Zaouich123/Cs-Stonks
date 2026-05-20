@@ -5,6 +5,7 @@ import { Check, ExternalLink, Link2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 async function updateTradeLink(tradeLink: string) {
   const response = await fetch("/api/me/profile", {
@@ -24,6 +25,7 @@ async function updateTradeLink(tradeLink: string) {
 }
 
 export function TradeLinkCard({ initialTradeLink }: { initialTradeLink: string | null }) {
+  const { language, t } = usePreferences();
   const [tradeLink, setTradeLink] = useState(initialTradeLink ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
@@ -36,10 +38,10 @@ export function TradeLinkCard({ initialTradeLink }: { initialTradeLink: string |
     try {
       await updateTradeLink(tradeLink);
       setStatus("success");
-      setMessage("Trade link saved.");
+      setMessage(t("tradeLinkSaved"));
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Unable to save trade link.");
+      setMessage(error instanceof Error ? error.message : language === "FR" ? "Impossible d'enregistrer le trade link." : "Unable to save trade link.");
     }
   }
 
@@ -49,15 +51,15 @@ export function TradeLinkCard({ initialTradeLink }: { initialTradeLink: string |
         <div>
           <div className="flex items-center gap-2 text-white">
             <Link2 className="size-5 text-[#66c0f4]" />
-            <h2 className="text-xl font-semibold">Trade link</h2>
+            <h2 className="text-xl font-semibold">{t("tradeLink")}</h2>
           </div>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Steam Inventory, Trade Offers, Third-Party Sites.
+            {t("tradeLinkLead")}
           </p>
         </div>
 
         <label className="block space-y-2">
-          <span className="text-sm text-white/60">Steam trade offer URL</span>
+          <span className="text-sm text-white/60">{t("tradeOfferUrl")}</span>
           <input
             className="w-full rounded-lg border border-white/10 bg-[#07111f]/80 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-[#66c0f4]/60"
             onChange={(event) => setTradeLink(event.target.value)}
@@ -73,12 +75,12 @@ export function TradeLinkCard({ initialTradeLink }: { initialTradeLink: string |
             rel="noreferrer"
             target="_blank"
           >
-            Find my trade link
+            {t("findMyTradeLink")}
             <ExternalLink className="size-3.5" />
           </a>
           <Button className="rounded-lg" disabled={status === "saving"} type="submit">
             {status === "saving" ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            Save
+            {t("save")}
           </Button>
         </div>
 

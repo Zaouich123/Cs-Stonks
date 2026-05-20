@@ -6,6 +6,7 @@ import { PrismaItemReadRepository } from "@/modules/items/item.repository";
 import { ItemQueryService } from "@/modules/items/item.service";
 import { PrismaMarketRepository } from "@/modules/markets/market.repository";
 import { ByMykelCatalogProvider } from "@/modules/providers/bymykel-catalog.provider";
+import { DmarketPriceProvider } from "@/modules/providers/dmarket/dmarket-price.provider";
 import { JsonCatalogProvider } from "@/modules/providers/json-catalog.provider";
 import { JsonPriceProvider } from "@/modules/providers/json-price.provider";
 import { LocalFallbackCatalogProvider } from "@/modules/providers/local-fallback-catalog.provider";
@@ -17,6 +18,8 @@ import {
   resolvePriceProviderSource,
 } from "@/modules/providers/provider.types";
 import { SteamPriceProvider as DirectSteamPriceProvider } from "@/modules/providers/steam/steam-price.provider";
+import { WaxpeerPriceProvider } from "@/modules/providers/waxpeer/waxpeer-price.provider";
+import { WhiteMarketPriceProvider } from "@/modules/providers/white-market/white-market-price.provider";
 import type {
   CatalogProvider,
   CatalogProviderSource,
@@ -26,6 +29,7 @@ import type {
 import { LatestPricingQueryService } from "@/modules/pricing/pricing.query.service";
 import { PrismaLatestPriceRepository } from "@/modules/pricing/pricing.repository";
 import { LatestPricingSyncService } from "@/modules/pricing/pricing.service";
+import { CsfloatIngestionService } from "@/modules/pricing/services/csfloatIngestionService";
 import { PrismaSnapshotRepository } from "@/modules/snapshots/snapshot.repository";
 import { DailySnapshotService } from "@/modules/snapshots/snapshot.service";
 import { PrismaSyncRunRepository } from "@/modules/sync-runs/sync-run.repository";
@@ -55,6 +59,12 @@ function createPriceProvider(source: PriceProviderSource): PriceProvider {
       return new DirectSteamPriceProvider();
     case "skinport":
       return new SkinportPriceProvider();
+    case "dmarket":
+      return new DmarketPriceProvider();
+    case "waxpeer":
+      return new WaxpeerPriceProvider();
+    case "white-market":
+      return new WhiteMarketPriceProvider();
     default:
       return new JsonPriceProvider();
   }
@@ -86,6 +96,15 @@ export function createDailySnapshotService() {
   return new DailySnapshotService(
     new PrismaLatestPriceRepository(prisma),
     new PrismaSnapshotRepository(prisma),
+    new PrismaSyncRunRepository(prisma),
+  );
+}
+
+export function createCsfloatIngestionService() {
+  return new CsfloatIngestionService(
+    prisma,
+    new PrismaMarketRepository(prisma),
+    new PrismaLatestPriceRepository(prisma),
     new PrismaSyncRunRepository(prisma),
   );
 }

@@ -5,6 +5,8 @@ import * as React from "react";
 import { cn } from "@/components/ui/Button";
 import { ApiSectionNavItem } from "@/components/api-docs/ApiSectionNavItem";
 import { apiDocEndpoints, apiDocNavigation, apiDocSections } from "@/lib/api-docs/api-docs-data";
+import { localizeApiDocEndpoints, localizeApiDocSections } from "@/lib/api-docs/api-docs-i18n";
+import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export function ApiDocsSidebar({
   activeId,
@@ -13,14 +15,21 @@ export function ApiDocsSidebar({
   activeId: string;
   onSelect: (id: string) => void;
 }) {
+  const { language, t } = usePreferences();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const sections = React.useMemo(() => localizeApiDocSections(apiDocSections, language), [language]);
+  const endpoints = React.useMemo(() => localizeApiDocEndpoints(apiDocEndpoints, language), [language]);
 
-  const groupedEndpoints = apiDocSections.map((section) => ({
+  const groupedEndpoints = sections.map((section) => ({
     ...section,
-    endpoints: apiDocEndpoints.filter((endpoint) => endpoint.category === section.id),
+    endpoints: endpoints.filter((endpoint) => endpoint.category === section.id),
   }));
 
-  const activeLabel = apiDocNavigation.find((item) => item.id === activeId)?.label ?? "Open navigation";
+  const activeLabel =
+    sections.find((item) => item.id === activeId)?.title ??
+    endpoints.find((item) => item.id === activeId)?.name ??
+    apiDocNavigation.find((item) => item.id === activeId)?.label ??
+    (language === "FR" ? "Ouvrir la navigation" : "Open navigation");
 
   function handleSelect(id: string) {
     onSelect(id);
@@ -36,10 +45,10 @@ export function ApiDocsSidebar({
           type="button"
         >
           <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Documentation</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">{t("apiDocsViewport")}</p>
             <p className="mt-1 text-sm font-medium text-white">{activeLabel}</p>
           </div>
-          <span className="text-xs font-semibold text-[#7eb7ff]">{mobileOpen ? "Close" : "Browse"}</span>
+          <span className="text-xs font-semibold text-[#7eb7ff]">{mobileOpen ? t("close") : t("browse")}</span>
         </button>
       </div>
 
@@ -51,9 +60,9 @@ export function ApiDocsSidebar({
       >
         <div className="border-b border-white/8 px-2 pb-4">
           <p className="text-[11px] uppercase tracking-[0.24em] text-[#7eb7ff]">Cs-Stonks API</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Reference</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">{t("apiDocsReference")}</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Choose a section on the left and the documentation viewport updates on the right.
+            {t("apiDocsChooseSection")}
           </p>
         </div>
 
