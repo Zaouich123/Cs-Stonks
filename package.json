@@ -43,6 +43,7 @@
     "@ianlucas/cs2-lib-inspect": "^5.5.0",
     "@prisma/client": "^6.18.0",
     "clsx": "^2.1.1",
+    "cs2-inspect-lib": "^3.2.2",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.8.0",
