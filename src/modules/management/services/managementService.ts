@@ -134,11 +134,12 @@ function aggregateSnapshotChart(
 
 function aggregateStockChart(
   snapshots: Array<{
+    marketId: string;
     quantity: number | null;
     snapshotDate: Date;
   }>,
 ) {
-  const byDate = new Map<string, { count: number; quantity: number }>();
+  const byDate = new Map<string, Map<string, number>>();
 
   for (const snapshot of snapshots) {
     if (snapshot.quantity === null) {
@@ -146,19 +147,34 @@ function aggregateStockChart(
     }
 
     const date = snapshot.snapshotDate.toISOString().slice(0, 10);
-    const existing = byDate.get(date) ?? { count: 0, quantity: 0 };
+    const marketQuantities = byDate.get(date) ?? new Map<string, number>();
 
-    existing.count += 1;
-    existing.quantity += snapshot.quantity;
-    byDate.set(date, existing);
+    marketQuantities.set(snapshot.marketId, snapshot.quantity);
+    byDate.set(date, marketQuantities);
   }
 
   return Array.from(byDate.entries())
-    .map(([date, value]) => ({
+    .map(([date, marketQuantities]) => ({
       date,
-      quantity: Math.round(value.quantity / value.count),
+      quantity: Array.from(marketQuantities.values()).reduce((total, quantity) => total + quantity, 0),
     }))
     .sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function sumCurrentStock(
+  latestPrices: Array<{
+    quantity: number | null;
+  }>,
+) {
+  const knownQuantities = latestPrices
+    .map((price) => price.quantity)
+    .filter((quantity): quantity is number => quantity !== null);
+
+  if (knownQuantities.length === 0) {
+    return null;
+  }
+
+  return knownQuantities.reduce((total, quantity) => total + quantity, 0);
 }
 
 function toWidget(row: {
@@ -281,7 +297,7 @@ export class ManagementService {
 
   async listTrackedSkins(userId: string): Promise<ManagementTrackedSkin[]> {
     const from = new Date();
-    from.setDate(from.getDate() - 90);
+    from.setDate(from.getDate() - 365);
 
     const trackedSkins = await this.client.userTrackedSkin.findMany({
       include: {
@@ -289,7 +305,7 @@ export class ManagementService {
           include: {
             dailySnapshots: {
               orderBy: [{ snapshotDate: "asc" }, { snapshotHour: "asc" }],
-              take: 1500,
+              take: 3000,
               where: {
                 snapshotDate: {
                   gte: from,
@@ -308,7 +324,6 @@ export class ManagementService {
               orderBy: {
                 price: "asc",
               },
-              take: 1,
             },
           },
         },
@@ -326,12 +341,14 @@ export class ManagementService {
       const chartData = aggregateSnapshotChart(trackedSkin.item.dailySnapshots);
       const stockChartData = aggregateStockChart(trackedSkin.item.dailySnapshots);
       const latestPrice = trackedSkin.item.latestPrices[0] ?? null;
+      const currentStock = sumCurrentStock(trackedSkin.item.latestPrices);
 
       return {
         alertAbovePrice: decimalToNumber(trackedSkin.alertAbovePrice),
         alertBelowPrice: decimalToNumber(trackedSkin.alertBelowPrice),
         chartData,
         createdAt: trackedSkin.createdAt.toISOString(),
+        currentStock,
         id: trackedSkin.id,
         item: toItemSummary(trackedSkin.item),
         label: trackedSkin.label,
