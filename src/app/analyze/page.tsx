@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { AnalyzeHeader } from "@/components/analyze/AnalyzeHeader";
 import { AnalyzeChartPanel } from "@/components/analyze/AnalyzeChartPanel";
@@ -20,8 +21,10 @@ interface SkinItem {
   steamImageUrl: string | null;
 }
 
-export default function AnalyzePage() {
+function AnalyzePageContent() {
   const { formatMoney, language, t } = usePreferences();
+  const searchParams = useSearchParams();
+  const requestedItemId = searchParams.get("itemId") ?? searchParams.get("item");
   const [selectedSkin, setSelectedSkin] = React.useState<SkinItem | null>(null);
   const [selectedMarket, setSelectedMarket] = React.useState<MarketItem>(ANALYZE_MARKETS[0]);
   const [period, setPeriod] = React.useState<number>(90);
@@ -37,6 +40,19 @@ export default function AnalyzePage() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (requestedItemId) {
+      fetch(`/api/items/${requestedItemId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.data) {
+            setSelectedSkin(data.data);
+          }
+        })
+        .catch(() => {});
+
+      return;
+    }
+
     fetch("/api/items?limit=1&query=AK-47%20|%20Redline%20(Field-Tested)")
       .then((res) => res.json())
       .then((data) => {
@@ -49,8 +65,9 @@ export default function AnalyzePage() {
               if (data2.data?.items?.[0]) setSelectedSkin(data2.data.items[0]);
             });
         }
-      });
-  }, []);
+      })
+      .catch(() => {});
+  }, [requestedItemId]);
 
   React.useEffect(() => {
     if (!selectedSkin) return;
@@ -229,6 +246,7 @@ export default function AnalyzePage() {
           )}
 
           <AnalyzeHeader
+            selectedSkin={selectedSkin}
             skinName={selectedSkin?.displayName || "Loading..."}
             marketName={selectedMarket.name}
             stats={stats}
@@ -319,5 +337,22 @@ export default function AnalyzePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AnalyzePage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[color:var(--color-surface)] text-white">
+          <Navbar />
+          <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+            <div className="h-9 w-9 animate-spin rounded-full border-4 border-white/15 border-t-[#4da3ff]" />
+          </main>
+        </div>
+      }
+    >
+      <AnalyzePageContent />
+    </React.Suspense>
   );
 }

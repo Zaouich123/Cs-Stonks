@@ -22,6 +22,7 @@ export interface ItemDetailChartPoint {
 interface ItemDetailChartProps {
   data: ItemDetailChartPoint[];
   isPositive: boolean;
+  sourceCurrency?: string | null;
 }
 
 function getRangeBounds(data: ItemDetailChartPoint[], start: string, end: string) {
@@ -47,8 +48,8 @@ function getActiveLabel(event: unknown) {
   return activeLabel == null ? null : String(activeLabel);
 }
 
-export function ItemDetailChart({ data, isPositive }: ItemDetailChartProps) {
-  const { t } = usePreferences();
+export function ItemDetailChart({ data, isPositive, sourceCurrency = "USD" }: ItemDetailChartProps) {
+  const { formatMoney, t } = usePreferences();
   const color = isPositive ? "#22c55e" : "#ef4444";
   const gradientId = React.useId();
   const [dragStart, setDragStart] = React.useState<string | null>(null);
@@ -169,7 +170,7 @@ export function ItemDetailChart({ data, isPositive }: ItemDetailChartProps) {
           <YAxis
             stroke="rgba(255,255,255,0.22)"
             tick={{ fill: "rgba(255,255,255,0.48)", fontSize: 11 }}
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => formatMoney(Number(value), sourceCurrency)}
             tickMargin={8}
             domain={["auto", "auto"]}
           />
@@ -183,7 +184,7 @@ export function ItemDetailChart({ data, isPositive }: ItemDetailChartProps) {
             }}
             formatter={(value) => {
               const resolvedValue = typeof value === "number" ? value : Number(value ?? 0);
-              return [`$${resolvedValue.toFixed(2)}`, "Price"];
+              return [formatMoney(resolvedValue, sourceCurrency), t("priceReference")];
             }}
             labelStyle={{ color: "rgba(255,255,255,0.6)" }}
           />

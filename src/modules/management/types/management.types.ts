@@ -39,6 +39,7 @@ export interface ManagementTrackedSkin {
   alertBelowPrice: number | null;
   chartData: ManagementChartPoint[];
   createdAt: string;
+  currentStock: number | null;
   id: string;
   item: ManagementItemSummary;
   label: string | null;
