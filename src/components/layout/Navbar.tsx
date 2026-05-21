@@ -101,6 +101,22 @@ export function Navbar() {
           >
             {t("inventory")}
           </Link>
+          {user ? (
+            <Link
+              href="/management"
+              className="text-sm font-medium text-white/70 transition-colors hover:text-white"
+            >
+              {t("management")}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link
+              href="/exchanges"
+              className="text-sm font-medium text-white/70 transition-colors hover:text-white"
+            >
+              {t("exchanges")}
+            </Link>
+          ) : null}
           <Link
             href="/analyze"
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"

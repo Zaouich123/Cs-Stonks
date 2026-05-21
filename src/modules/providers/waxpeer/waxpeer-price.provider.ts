@@ -41,9 +41,9 @@ export interface WaxpeerPriceProviderConfig {
   requestTimeoutMs: number;
 }
 
-function readPriceFromCents(value?: number | null) {
+function readWaxpeerPrice(value?: number | null) {
   return typeof value === "number" && Number.isFinite(value) && value > 0
-    ? value / 100
+    ? value / 1000
     : null;
 }
 
@@ -105,7 +105,7 @@ export class WaxpeerPriceProvider implements PriceProvider {
       matchedExactCount += match.matchType === "exact" ? 1 : 0;
       matchedCanonicalCount += match.matchType === "canonical" ? 1 : 0;
 
-      const price = readPriceFromCents(providerItem.min);
+      const price = readWaxpeerPrice(providerItem.min);
 
       if (!price) {
         warnings.push({
@@ -121,7 +121,7 @@ export class WaxpeerPriceProvider implements PriceProvider {
         typeof providerItem.count === "number" && providerItem.count >= 0
           ? Math.trunc(providerItem.count)
           : null;
-      const steamSuggestedPrice = readPriceFromCents(providerItem.steam_price);
+      const steamSuggestedPrice = readWaxpeerPrice(providerItem.steam_price);
 
       items.push({
         currency: this.config.currency,

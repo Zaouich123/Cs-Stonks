@@ -121,6 +121,26 @@ function buildSummary(items: InventoryItem[]) {
   };
 }
 
+async function persistInventorySnapshot(
+  client: PrismaClient,
+  userId: string,
+  summary: ReturnType<typeof buildSummary>,
+) {
+  if (summary.totalEstimatedValue === null || !summary.valueCurrency) {
+    return;
+  }
+
+  await client.userInventorySnapshot.create({
+    data: {
+      currency: summary.valueCurrency,
+      itemCount: summary.totalInventoryItems,
+      source: "steam_inventory",
+      totalValue: summary.totalEstimatedValue,
+      userId,
+    },
+  });
+}
+
 function getCacheTtlMs() {
   const parsed = Number(process.env.STEAM_INVENTORY_CACHE_TTL_SECONDS);
 
@@ -200,6 +220,7 @@ export class InventoryService {
       };
 
       inventoryCache.set(user.steamId, entry);
+      await persistInventorySnapshot(this.client, user.id, entry.response.summary);
 
       return withCacheInfo(entry, { source: "steam" });
     } catch (error) {

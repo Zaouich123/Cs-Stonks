@@ -13,12 +13,12 @@ function createResponse(body: unknown, init: Partial<Response> = {}) {
 
 describe("csfloat.client", () => {
   it("builds the /listings URL with cursor, limit, market hash name, and Authorization", async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       createResponse({
         cursor: "next-cursor",
         listings: [],
       }),
-    ) as typeof fetch;
+    );
     const client = new CsfloatClient(
       {
         apiKey: "test-key",
@@ -55,7 +55,7 @@ describe("csfloat.client", () => {
 
   it("backs off once on 429 then returns the next response", async () => {
     const fetchImpl = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(
         createResponse(
           {},
@@ -71,7 +71,7 @@ describe("csfloat.client", () => {
           data: [],
           next_cursor: null,
         }),
-      ) as typeof fetch;
+      );
     const client = new CsfloatClient(
       {
         apiKey: "test-key",
@@ -93,7 +93,7 @@ describe("csfloat.client", () => {
   });
 
   it("fetches the aggregated price-list endpoint", async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       createResponse([
         {
           market_hash_name: "AK-47 | Redline (Field-Tested)",
@@ -101,7 +101,7 @@ describe("csfloat.client", () => {
           quantity: 12,
         },
       ]),
-    ) as typeof fetch;
+    );
     const client = new CsfloatClient(
       {
         apiKey: "test-key",
