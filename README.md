@@ -347,6 +347,32 @@ npm run build
 - `/exchanges` : analyse manuelle d'echange et comparaison du gain net.
 - `/api-docs` : documentation API integree.
 
+## Connexion Steam pour les tests
+
+Pour tester les fonctionnalites utilisateur, il est recommande d'utiliser un
+compte Steam de test ou un compte Steam personnel.
+
+La connexion Steam utilise Steam OpenID : Cs-Stonks ne demande jamais le mot de
+passe Steam. L'application recupere uniquement l'identite publique du compte
+connecte.
+
+Pour enrichir le profil avec le pseudo, l'avatar et certaines donnees Steam,
+renseigner `STEAM_WEB_API_KEY` dans `.env`. La cle se cree depuis :
+
+```text
+https://steamcommunity.com/dev/apikey
+```
+
+En local, le domaine demande par Steam peut etre configure avec :
+
+```text
+localhost
+```
+
+Sans connexion Steam, les pages `/auth`, `/profile`, `/inventory` et
+`/management` peuvent rediriger vers l'authentification ou afficher moins de
+donnees utilisateur.
+
 ## Synchronisation des donnees
 
 Les jobs de synchronisation lisent les providers externes puis ecrivent dans
