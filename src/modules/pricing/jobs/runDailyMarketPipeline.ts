@@ -12,12 +12,21 @@ interface PipelineStepResult {
   ignored?: number;
   name: string;
   persisted?: number;
-  status: "FAILED" | "SUCCESS";
+  reason?: string;
+  status: "FAILED" | "SKIPPED" | "SUCCESS";
   updated?: number;
   upserted?: number;
 }
 
 const marketSources: PriceProviderSource[] = ["dmarket", "skinport", "waxpeer", "white-market"];
+
+function isCsfloatConfigured() {
+  return Boolean(process.env.CSFLOAT_API_KEY?.trim());
+}
+
+function isCsfloatEnabled() {
+  return process.env.CSFLOAT_SYNC_ENABLED !== "false";
+}
 
 async function runStep<T>(name: string, runner: () => Promise<T>, summarize: (result: T) => Omit<PipelineStepResult, "name" | "status">) {
   const startedAt = Date.now();
@@ -51,12 +60,25 @@ export async function runDailyMarketPipeline() {
   const startedAt = new Date().toISOString();
   const summaries: PipelineStepResult[] = [];
 
-  const csfloatSummary = await runStep("csfloat", runCsfloatPriceListSync, (result) => ({
-    ignored: result.itemsIgnored,
-    persisted: result.itemsUpserted,
-    upserted: result.itemsUpserted,
-  }));
-  summaries.push(csfloatSummary);
+  if (isCsfloatEnabled() && isCsfloatConfigured()) {
+    const csfloatSummary = await runStep("csfloat", runCsfloatPriceListSync, (result) => ({
+      ignored: result.itemsIgnored,
+      persisted: result.itemsUpserted,
+      upserted: result.itemsUpserted,
+    }));
+    summaries.push(csfloatSummary);
+  } else {
+    const reason = isCsfloatEnabled()
+      ? "CSFLOAT_API_KEY is not configured."
+      : "CSFLOAT_SYNC_ENABLED=false.";
+
+    logger.warn("Daily market pipeline step skipped: csfloat", { reason });
+    summaries.push({
+      name: "csfloat",
+      reason,
+      status: "SKIPPED",
+    });
+  }
 
   for (const source of marketSources) {
     const summary = await runStep(source, () => runLatestPricesSyncJob(source), (result) => ({

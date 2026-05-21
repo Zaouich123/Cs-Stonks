@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:local": "npm run db:local:setup && next dev",
     "dev:docker": "npm run db:docker:setup && next dev",
+    "setup": "node ./scripts/setup.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
