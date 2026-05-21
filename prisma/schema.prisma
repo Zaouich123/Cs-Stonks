@@ -38,43 +38,96 @@ enum SyncStatus {
   PARTIAL
 }
 
-model Item {
-  id             String          @id @default(cuid())
-  variantKey     String          @unique
-  slug           String
-  searchText     String
-  marketHashName String
-  itemType       ItemType
-  weapon         String?
-  skinName       String?
-  displayName    String
-  baseItemName   String?
-  exterior       String?
-  rarity         String?
-  stattrak       Boolean         @default(false)
-  souvenir       Boolean         @default(false)
-  hasVariants    Boolean         @default(false)
-  phase          String?
-  collection     String?
-  imageUrl       String?
-  steamImageUrl  String?
-  steamAppId     Int             @default(730)
-  source         String          @default("unknown")
-  sourceExternalId String?
-  lastCatalogSyncAt DateTime?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  latestPrices   LatestPrice[]
-  dailySnapshots DailySnapshot[]
+enum DashboardWidgetType {
+  TRACKED_SKIN_CHART
+  INVENTORY_VALUE
+  CS2_UPDATE
+  MARKETPLACE_SALES
+  TRADE_TRACKER
+  NOTIFICATIONS
+}
 
+enum DashboardWidgetSize {
+  SMALL
+  MEDIUM
+  LARGE
+  WIDE
+}
+
+enum MarketplaceListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  EXPIRED
+  UNKNOWN
+}
+
+enum UserTradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+  EFFECTIVE
+  UNKNOWN
+}
+
+enum UserNotificationType {
+  PRICE_ALERT
+  LISTING_SOLD
+  TRADE_PENDING
+  TRADE_EFFECTIVE
+  INVENTORY_SYNC_FAILED
+  CS2_UPDATE
+  SYSTEM
+}
+
+enum UserNotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+model Item {
+  id                  String                   @id @default(cuid())
+  variantKey          String                   @unique
+  slug                String
+  searchText          String
+  marketHashName      String
+  itemType            ItemType
+  weapon              String?
+  skinName            String?
+  displayName         String
+  baseItemName        String?
+  exterior            String?
+  rarity              String?
+  stattrak            Boolean                  @default(false)
+  souvenir            Boolean                  @default(false)
+  hasVariants         Boolean                  @default(false)
+  phase               String?
+  collection          String?
+  imageUrl            String?
+  steamImageUrl       String?
+  steamAppId          Int                      @default(730)
+  source              String                   @default("unknown")
+  sourceExternalId    String?
+  lastCatalogSyncAt   DateTime?
+  isActive            Boolean                  @default(true)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  latestPrices        LatestPrice[]
+  dailySnapshots      DailySnapshot[]
+  trackedByUsers      UserTrackedSkin[]
+  marketplaceListings UserMarketplaceListing[]
+
+  @@unique([marketHashName, phase], map: "item_market_hash_name_phase_unique")
   @@index([slug])
   @@index([marketHashName])
   @@index([searchText])
   @@index([itemType])
   @@index([source, isActive])
   @@index([baseItemName])
-  @@unique([marketHashName, phase], map: "item_market_hash_name_phase_unique")
 }
 
 model Market {
@@ -124,11 +177,11 @@ model LatestPrice {
   item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
 
+  @@unique([itemId, marketId], map: "latest_price_item_market_unique")
   @@index([itemId])
   @@index([marketId])
   @@index([marketId, fetchedAt])
   @@index([itemId, fetchedAt])
-  @@unique([itemId, marketId], map: "latest_price_item_market_unique")
 }
 
 model DailySnapshot {
@@ -164,10 +217,10 @@ model DailySnapshot {
   item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   market          Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
 
+  @@unique([snapshotDate, snapshotHour, itemId, marketId], map: "snapshot_date_hour_item_market_unique")
   @@index([snapshotDate])
   @@index([itemId, snapshotDate])
   @@index([marketId, snapshotDate])
-  @@unique([snapshotDate, snapshotHour, itemId, marketId], map: "snapshot_date_hour_item_market_unique")
 }
 
 model SyncRun {
@@ -188,22 +241,28 @@ model SyncRun {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  steamId           String             @unique
-  steamPersonaName  String
-  steamProfileUrl   String?
-  steamAvatar       String?
-  steamAvatarMedium String?
-  steamAvatarFull   String?
-  tradeLink         String?
-  phoneNumber       String?
-  phoneCountryCode  String?
-  phoneVerified     Boolean            @default(false)
-  lastLoginAt       DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  sessions          Session[]
-  profileAudits     UserProfileAudit[]
+  id                  String                   @id @default(cuid())
+  steamId             String                   @unique
+  steamPersonaName    String
+  steamProfileUrl     String?
+  steamAvatar         String?
+  steamAvatarMedium   String?
+  steamAvatarFull     String?
+  tradeLink           String?
+  phoneNumber         String?
+  phoneCountryCode    String?
+  phoneVerified       Boolean                  @default(false)
+  lastLoginAt         DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  sessions            Session[]
+  profileAudits       UserProfileAudit[]
+  trackedSkins        UserTrackedSkin[]
+  dashboardWidgets    UserDashboardWidget[]
+  inventorySnapshots  UserInventorySnapshot[]
+  marketplaceListings UserMarketplaceListing[]
+  trades              UserTrade[]
+  notifications       UserNotification[]
 
   @@index([steamId])
 }
@@ -231,4 +290,117 @@ model UserProfileAudit {
 
   @@index([userId, createdAt])
   @@index([action, createdAt])
+}
+
+model UserTrackedSkin {
+  id              String   @id @default(cuid())
+  userId          String
+  itemId          String
+  label           String?
+  targetPrice     Decimal? @db.Decimal(12, 2)
+  alertAbovePrice Decimal? @db.Decimal(12, 2)
+  alertBelowPrice Decimal? @db.Decimal(12, 2)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item            Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId], map: "user_tracked_skin_user_item_unique")
+  @@index([userId, isActive])
+  @@index([itemId])
+}
+
+model UserDashboardWidget {
+  id         String              @id @default(cuid())
+  userId     String
+  widgetType DashboardWidgetType
+  enabled    Boolean             @default(true)
+  position   Int                 @default(0)
+  size       DashboardWidgetSize @default(MEDIUM)
+  config     Json?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, widgetType], map: "dashboard_widget_user_type_unique")
+  @@index([userId, enabled])
+}
+
+model UserInventorySnapshot {
+  id         String   @id @default(cuid())
+  userId     String
+  totalValue Decimal  @db.Decimal(12, 2)
+  currency   String   @db.VarChar(3)
+  itemCount  Int
+  source     String   @default("steam_inventory")
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model UserMarketplaceListing {
+  id                String                   @id @default(cuid())
+  userId            String
+  itemId            String
+  marketSlug        String
+  externalListingId String?
+  listingUrl        String?
+  listedPrice       Decimal                  @db.Decimal(12, 2)
+  currency          String                   @db.VarChar(3)
+  status            MarketplaceListingStatus @default(UNKNOWN)
+  listedAt          DateTime                 @default(now())
+  soldAt            DateTime?
+  lastCheckedAt     DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item              Item                     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([itemId])
+  @@index([marketSlug])
+}
+
+model UserTrade {
+  id                     String          @id @default(cuid())
+  userId                 String
+  partnerSteamId         String?
+  partnerName            String
+  partnerAvatarUrl       String?
+  tradeOfferId           String?
+  status                 UserTradeStatus @default(PENDING)
+  itemsGiven             Json?
+  itemsReceived          Json?
+  estimatedValueGiven    Decimal?        @db.Decimal(12, 2)
+  estimatedValueReceived Decimal?        @db.Decimal(12, 2)
+  currency               String          @db.VarChar(3)
+  createdAt              DateTime        @default(now())
+  acceptedAt             DateTime?
+  effectiveAt            DateTime?
+  lastCheckedAt          DateTime?
+  notes                  String?
+  updatedAt              DateTime        @updatedAt
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([effectiveAt])
+}
+
+model UserNotification {
+  id        String                   @id @default(cuid())
+  userId    String
+  type      UserNotificationType
+  title     String
+  message   String
+  severity  UserNotificationSeverity @default(INFO)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime                 @default(now())
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
 }

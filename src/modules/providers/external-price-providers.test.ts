@@ -70,7 +70,7 @@ describe("external price providers", () => {
     expect(result.summary.warnings).toEqual([]);
   });
 
-  it("maps WAXPEER min prices from cents", async () => {
+  it("maps WAXPEER min prices from milli-USD values", async () => {
     const provider = new WaxpeerPriceProvider(
       {
         baseUrl: "https://api.waxpeer.test/v1/prices",
@@ -84,9 +84,9 @@ describe("external price providers", () => {
             {
               count: 12,
               img: "https://cdn.example.test/redline.png",
-              min: 1299,
+              min: 12990,
               name: "AK-47 | Redline (Field-Tested)",
-              steam_price: 1600,
+              steam_price: 16000,
             },
           ],
           success: true,
