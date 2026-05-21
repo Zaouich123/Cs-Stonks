@@ -35,6 +35,12 @@ yarn-error.log*
 /skinport-db-proof.json
 /sprint-*-*.json
 
+# local project notes and school deliverables kept off GitHub
+/Agent/
+/avancement/
+/avancement-2/
+/avancement-2.zip
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
