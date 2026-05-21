@@ -50,7 +50,7 @@
     "cs2-inspect-lib": "^3.2.2",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.16.0",
     "next": "15.5.15",
     "node-cron": "^4.2.1",
     "react": "19.2.5",
