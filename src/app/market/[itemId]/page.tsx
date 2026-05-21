@@ -596,7 +596,11 @@ export default function MarketItemDetailPage() {
                   ) : null}
 
                   {chartData.length > 0 ? (
-                    <ItemDetailChart data={chartData} isPositive={stats.isPositive} />
+                    <ItemDetailChart
+                      data={chartData}
+                      isPositive={stats.isPositive}
+                      sourceCurrency={currentMarketFloorCurrency ?? "USD"}
+                    />
                   ) : (
                     <div className="flex h-[320px] items-center justify-center rounded-[1.6rem] border border-white/8 bg-[#07101d] text-sm text-white/35 md:h-[380px]">
                       {t("noHistoricalData")}

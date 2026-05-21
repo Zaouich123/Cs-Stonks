@@ -41,6 +41,74 @@ interface TrackedSkinChartWidgetProps {
 }
 
 type ChartMode = "price" | "stock";
+type ChartRange = "7d" | "90d" | "1y";
+
+const chartRangeOptions: Array<{ days: number; value: ChartRange }> = [
+  { days: 7, value: "7d" },
+  { days: 90, value: "90d" },
+  { days: 365, value: "1y" },
+];
+
+function getChartRangeLabel(range: ChartRange, language: "FR" | "EN") {
+  if (range === "1y") {
+    return language === "FR" ? "1an" : "1y";
+  }
+
+  if (range === "7d") {
+    return language === "FR" ? "7j" : "7d";
+  }
+
+  return language === "FR" ? "90j" : "90d";
+}
+
+function getChartRangeDays(range: ChartRange) {
+  return chartRangeOptions.find((option) => option.value === range)?.days ?? 7;
+}
+
+function filterChartDataByRange<TPoint extends { date: string }>(data: TPoint[], range: ChartRange) {
+  if (data.length < 2) {
+    return data;
+  }
+
+  const lastPoint = data[data.length - 1];
+  const lastTimestamp = Date.parse(lastPoint.date);
+
+  if (!Number.isFinite(lastTimestamp)) {
+    return data.slice(-getChartRangeDays(range));
+  }
+
+  const minimumTimestamp = lastTimestamp - (getChartRangeDays(range) - 1) * 24 * 60 * 60 * 1000;
+
+  return data.filter((point) => {
+    const pointTimestamp = Date.parse(point.date);
+    return Number.isFinite(pointTimestamp) && pointTimestamp >= minimumTimestamp;
+  });
+}
+
+function computePriceTrend(data: Array<{ price?: number }>) {
+  const points = data.filter((point): point is { price: number } => typeof point.price === "number");
+
+  if (points.length < 2) {
+    return {
+      absoluteChange: 0,
+      isNeutral: true,
+      isPositive: false,
+      percentageChange: 0,
+    };
+  }
+
+  const first = points[0].price;
+  const last = points[points.length - 1].price;
+  const absoluteChange = last - first;
+  const percentageChange = first === 0 ? 0 : (absoluteChange / first) * 100;
+
+  return {
+    absoluteChange,
+    isNeutral: absoluteChange === 0,
+    isPositive: absoluteChange > 0,
+    percentageChange,
+  };
+}
 
 function useDebouncedValue(value: string, delayMs: number) {
   const [debouncedValue, setDebouncedValue] = React.useState(value);
@@ -137,6 +205,7 @@ export function TrackedSkinChartWidget({
   const [selectedSkinId, setSelectedSkinId] = React.useState(trackedSkins[0]?.id ?? "");
   const [searchOpen, setSearchOpen] = React.useState(trackedSkins.length === 0);
   const [chartMode, setChartMode] = React.useState<ChartMode>("price");
+  const [chartRange, setChartRange] = React.useState<ChartRange>("7d");
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<ItemSearchRow[]>([]);
   const [searching, setSearching] = React.useState(false);
@@ -193,8 +262,17 @@ export function TrackedSkinChartWidget({
   }, [debouncedQuery]);
 
   const selectedSkin = trackedSkins.find((skin) => skin.id === selectedSkinId) ?? trackedSkins[0] ?? null;
-  const color = chartMode === "stock" ? "#4da3ff" : selectedSkin?.trend7d.isPositive ? "#22c55e" : "#ef4444";
-  const chartData = chartMode === "stock" ? selectedSkin?.stockChartData ?? [] : selectedSkin?.chartData ?? [];
+  const priceChartData = React.useMemo(
+    () => filterChartDataByRange(selectedSkin?.chartData ?? [], chartRange),
+    [chartRange, selectedSkin?.chartData],
+  );
+  const stockChartData = React.useMemo(
+    () => filterChartDataByRange(selectedSkin?.stockChartData ?? [], chartRange),
+    [chartRange, selectedSkin?.stockChartData],
+  );
+  const rangeTrend = React.useMemo(() => computePriceTrend(priceChartData), [priceChartData]);
+  const color = chartMode === "stock" ? "#4da3ff" : rangeTrend.isPositive ? "#22c55e" : "#ef4444";
+  const chartData = chartMode === "stock" ? stockChartData : priceChartData;
 
   const addTrackedSkin = async (item: ItemSearchRow) => {
     setAddingItemId(item.id);
@@ -247,7 +325,7 @@ export function TrackedSkinChartWidget({
           </button>
           <Link
             className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/62 transition hover:text-white"
-            href="/analyze"
+            href={selectedSkin ? `/analyze?itemId=${encodeURIComponent(selectedSkin.item.id)}` : "/analyze"}
           >
             Analyze
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -383,6 +461,21 @@ export function TrackedSkinChartWidget({
                 ))}
               </div>
 
+              <div className="rounded-full border border-white/10 bg-white/[0.035] p-1">
+                {chartRangeOptions.map((option) => (
+                  <button
+                    className={`rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] transition ${
+                      chartRange === option.value ? "bg-white/14 text-white" : "text-white/48 hover:text-white"
+                    }`}
+                    key={option.value}
+                    onClick={() => setChartRange(option.value)}
+                    type="button"
+                  >
+                    {getChartRangeLabel(option.value, language)}
+                  </button>
+                ))}
+              </div>
+
               {trackedSkins.length > 1 ? (
                 <select
                   className="h-11 rounded-2xl border border-white/10 bg-[#07101d] px-4 text-sm font-semibold text-white outline-none transition focus:border-[#4da3ff]/55"
@@ -414,21 +507,25 @@ export function TrackedSkinChartWidget({
                     : "No price data yet for this tracked skin."
               }
               formatValue={(value) =>
-                chartMode === "stock" ? `${Math.round(value)} listings` : formatMoney(value, "USD")
+                chartMode === "stock"
+                  ? `${Math.round(value)} listings`
+                  : formatMoney(value, selectedSkin.latestPrice?.currency ?? "USD")
               }
               tooltipLabel={chartMode === "stock" ? "Stock" : "Price"}
             />
             <aside className="rounded-2xl border border-white/8 bg-white/[0.035] p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/35">
-                {language === "FR" ? "Tendance 7j" : "7d trend"}
+                {language === "FR"
+                  ? `Tendance ${getChartRangeLabel(chartRange, language)}`
+                  : `${getChartRangeLabel(chartRange, language)} trend`}
               </p>
               <p
                 className={`mt-2 text-2xl font-semibold ${
-                  selectedSkin.trend7d.isPositive ? "text-emerald-300" : "text-rose-300"
+                  rangeTrend.isNeutral ? "text-white" : rangeTrend.isPositive ? "text-emerald-300" : "text-rose-300"
                 }`}
               >
-                {selectedSkin.trend7d.percentageChange >= 0 ? "+" : ""}
-                {selectedSkin.trend7d.percentageChange.toFixed(2)}%
+                {rangeTrend.percentageChange >= 0 ? "+" : ""}
+                {rangeTrend.percentageChange.toFixed(2)}%
               </p>
               <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/35">
                 {language === "FR" ? "Alerte cible" : "Target alert"}
@@ -440,9 +537,9 @@ export function TrackedSkinChartWidget({
                 {language === "FR" ? "Stock actuel" : "Current stock"}
               </p>
               <p className="mt-2 text-sm font-semibold text-white">
-                {selectedSkin.latestPrice?.quantity === null || selectedSkin.latestPrice?.quantity === undefined
+                {selectedSkin.currentStock === null || selectedSkin.currentStock === undefined
                   ? "N/A"
-                  : `${selectedSkin.latestPrice.quantity} listings`}
+                  : `${selectedSkin.currentStock} listings`}
               </p>
               <Link
                 className="mt-5 inline-flex w-full justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/64 transition hover:text-white"

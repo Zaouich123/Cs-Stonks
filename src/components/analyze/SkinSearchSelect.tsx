@@ -12,11 +12,12 @@ export interface SkinItem {
 }
 
 interface SkinSearchSelectProps {
+  selectedItem?: SkinItem | null;
   value: string;
   onChange: (skinName: string, item: SkinItem) => void;
 }
 
-export function SkinSearchSelect({ value, onChange }: SkinSearchSelectProps) {
+export function SkinSearchSelect({ selectedItem, value, onChange }: SkinSearchSelectProps) {
   const { language, t } = usePreferences();
   const [isOpen, setIsOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -90,7 +91,8 @@ export function SkinSearchSelect({ value, onChange }: SkinSearchSelectProps) {
   const getImgSrc = (item: SkinItem) => item.imageUrl || item.steamImageUrl || null;
 
   // Find current selected item image
-  const currentItem = allItems.find((i) => i.displayName === value);
+  const currentItem =
+    selectedItem ?? allItems.find((item) => item.displayName === value);
   const currentImg = currentItem ? getImgSrc(currentItem) : null;
 
   return (
