@@ -89,16 +89,54 @@ docker --version
 git --version
 ```
 
-## Installation complete en local
+## Installation automatique recommandee
+
+Cette commande prepare le projet localement avec le chemin le plus simple :
+
+```bash
+npm run setup
+```
+
+Elle execute automatiquement :
+
+- `npm ci`
+- creation de `.env` depuis `.env.example` si le fichier n'existe pas
+- generation de `SESSION_SECRET` si la valeur est absente ou encore par defaut
+- `npm run prisma:generate`
+- lancement de PostgreSQL Docker
+- `npm run prisma:migrate:deploy`
+- `npm run job:catalog`
+- `npm run jobs:daily-markets`
+
+Ensuite, lancer l'application :
+
+```bash
+npm run dev
+```
+
+Puis ouvrir :
+
+```text
+http://localhost:3000
+```
+
+Pour faire une installation plus rapide sans synchroniser les prix :
+
+```bash
+npm run setup -- --skip-prices
+```
+
+Si `CSFLOAT_API_KEY` n'est pas renseignee, l'etape CSFloat est ignoree
+proprement et les autres markets continuent.
+
+## Installation manuelle complete
 
 ### 1. Cloner le depot
 
 ```bash
-git clone <LIEN_DU_DEPOT_GITHUB>
+git clone https://github.com/Zaouich123/Cs-Stonks.git
 cd Cs-Stonks
 ```
-
-Remplacer `<LIEN_DU_DEPOT_GITHUB>` par le lien GitHub fourni pour le rendu.
 
 ### 2. Installer les dependances
 
@@ -225,8 +263,9 @@ npm run job:white-market
 Notes :
 
 - `npm run job:csfloat` necessite `CSFLOAT_API_KEY`.
-- Si aucune cle CSFloat n'est configuree, passer cette commande ou configurer
-  la variable avant `npm run jobs:daily-markets`.
+- `npm run jobs:daily-markets` reste utilisable sans `CSFLOAT_API_KEY` :
+  l'etape CSFloat est marquee comme ignoree, puis le pipeline continue avec
+  DMarket, Skinport, WAXPEER, white.market et le snapshot journalier.
 - Les autres providers publics peuvent etre limites par leur API ou leur
   disponibilite.
 
@@ -253,23 +292,30 @@ Ouvrir ensuite :
 http://localhost:3000
 ```
 
-## Installation rapide avec le script Docker du projet
+## Options du script setup
 
-Le projet contient aussi un script pratique qui prepare la base Docker :
-
-```powershell
-npm ci
-Copy-Item .env.example .env
-npm run db:docker:setup
-npm run job:catalog
-npm run jobs:daily-markets
-npm run dev
-```
-
-Sur macOS/Linux, remplacer `Copy-Item .env.example .env` par :
+Afficher l'aide :
 
 ```bash
-cp .env.example .env
+npm run setup -- --help
+```
+
+Ne pas relancer `npm ci` :
+
+```bash
+npm run setup -- --skip-install
+```
+
+Ne pas importer le catalogue :
+
+```bash
+npm run setup -- --skip-catalog
+```
+
+Ne pas synchroniser les prix marketplaces :
+
+```bash
+npm run setup -- --skip-prices
 ```
 
 ## Commandes de lancement utiles
@@ -570,10 +616,11 @@ npm run job:catalog
 npm run jobs:daily-markets
 ```
 
-Si CSFloat ne se synchronise pas :
+Si CSFloat ne se synchronise pas dans le pipeline :
 
 ```bash
-CSFLOAT_API_KEY doit etre renseignee dans .env
+CSFLOAT_API_KEY doit etre renseignee dans .env pour activer cette source.
+Sans cle, jobs:daily-markets saute CSFloat et continue les autres markets.
 ```
 
 ## Licence et usage
