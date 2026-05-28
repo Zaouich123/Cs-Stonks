@@ -5,9 +5,9 @@ import type { SessionUser, SteamProfile } from "@/modules/auth/types/auth.types"
 export type SteamUserProfileInput = SteamProfile;
 
 export interface UserProfileUpdateInput {
-  phoneCountryCode: string | null;
-  phoneNumber: string | null;
-  tradeLink: string | null;
+  phoneCountryCode?: string | null;
+  phoneNumber?: string | null;
+  tradeLink?: string | null;
 }
 
 export function toSessionUser(user: User): SessionUser {

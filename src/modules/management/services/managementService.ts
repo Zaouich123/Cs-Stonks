@@ -27,13 +27,20 @@ import type {
   ManagementWidget,
 } from "@/modules/management/types/management.types";
 
-const trackedSkinCreateSchema = z.object({
+const trackedSkinCreateItemSchema = z.object({
   alertAbovePrice: z.coerce.number().positive().nullable().optional(),
   alertBelowPrice: z.coerce.number().positive().nullable().optional(),
   itemId: z.string().min(1),
   label: z.string().trim().max(80).nullable().optional(),
   targetPrice: z.coerce.number().positive().nullable().optional(),
 });
+
+const trackedSkinCreateSchema = z.union([
+  trackedSkinCreateItemSchema,
+  z.object({
+    items: z.array(trackedSkinCreateItemSchema).min(1).max(20),
+  }),
+]);
 
 const widgetsPatchSchema = z.object({
   widgets: z
@@ -196,19 +203,45 @@ function toWidget(row: {
   };
 }
 
+function toPriceAlertMessage(input: {
+  currency: string;
+  direction: "above" | "below";
+  itemName: string;
+  price: number;
+  threshold: number;
+}) {
+  const price = `${input.price.toFixed(2)} ${input.currency}`;
+  const threshold = `${input.threshold.toFixed(2)} ${input.currency}`;
+
+  if (input.direction === "above") {
+    return `${input.itemName} est a ${price}, au-dessus du seuil ${threshold}.`;
+  }
+
+  return `${input.itemName} est a ${price}, sous le seuil ${threshold}.`;
+}
+
+function hasEnabledWidget(widgets: ManagementWidget[], widgetType: DashboardWidgetType) {
+  return widgets.some((widget) => widget.widgetType === widgetType && widget.enabled);
+}
+
 export class ManagementService {
   constructor(private readonly client: PrismaClient = prisma) {}
 
   async getDashboardData(userId: string): Promise<ManagementDashboardData> {
-    const [widgets, trackedSkins, inventory, listings, trades, notifications, cs2Updates] = await Promise.all([
+    const [widgets, trackedSkins, inventory, listings, trades, cs2Updates] = await Promise.all([
       this.getWidgets(userId),
       this.listTrackedSkins(userId),
       this.getInventoryValue(userId),
       this.listListings(userId),
       this.listTrades(userId),
-      this.listNotifications(userId),
       getLatestCs2News(1),
     ]);
+    const newsWidgetEnabled = hasEnabledWidget(widgets, DashboardWidgetType.CS2_UPDATE);
+    const notifications = await this.listNotifications(userId, {
+      evaluateCs2News: newsWidgetEnabled,
+      evaluatePriceAlerts: true,
+      includeCs2News: newsWidgetEnabled,
+    });
 
     return {
       cs2Updates,
@@ -371,43 +404,51 @@ export class ManagementService {
 
   async createTrackedSkin(userId: string, payload: unknown) {
     const input = trackedSkinCreateSchema.parse(payload);
-    const item = await this.client.item.findFirst({
-      select: {
-        id: true,
-      },
-      where: {
-        id: input.itemId,
-        isActive: true,
-      },
-    });
+    const items = "items" in input ? input.items : [input];
 
-    if (!item) {
-      throw new ApplicationError("Item not found.", 404);
+    for (const itemInput of items) {
+      const item = await this.client.item.findFirst({
+        select: {
+          id: true,
+        },
+        where: {
+          id: itemInput.itemId,
+          isActive: true,
+        },
+      });
+
+      if (!item) {
+        throw new ApplicationError("Item not found.", 404);
+      }
     }
 
-    await this.client.userTrackedSkin.upsert({
-      create: {
-        alertAbovePrice: input.alertAbovePrice ?? null,
-        alertBelowPrice: input.alertBelowPrice ?? null,
-        itemId: input.itemId,
-        label: input.label ?? null,
-        targetPrice: input.targetPrice ?? null,
-        userId,
-      },
-      update: {
-        alertAbovePrice: input.alertAbovePrice ?? null,
-        alertBelowPrice: input.alertBelowPrice ?? null,
-        isActive: true,
-        label: input.label ?? null,
-        targetPrice: input.targetPrice ?? null,
-      },
-      where: {
-        userId_itemId: {
-          itemId: input.itemId,
-          userId,
-        },
-      },
-    });
+    await this.client.$transaction(
+      items.map((itemInput) =>
+        this.client.userTrackedSkin.upsert({
+          create: {
+            alertAbovePrice: itemInput.alertAbovePrice ?? null,
+            alertBelowPrice: itemInput.alertBelowPrice ?? null,
+            itemId: itemInput.itemId,
+            label: itemInput.label ?? null,
+            targetPrice: itemInput.targetPrice ?? null,
+            userId,
+          },
+          update: {
+            alertAbovePrice: itemInput.alertAbovePrice ?? null,
+            alertBelowPrice: itemInput.alertBelowPrice ?? null,
+            isActive: true,
+            label: itemInput.label ?? null,
+            targetPrice: itemInput.targetPrice ?? null,
+          },
+          where: {
+            userId_itemId: {
+              itemId: itemInput.itemId,
+              userId,
+            },
+          },
+        }),
+      ),
+    );
 
     return this.listTrackedSkins(userId);
   }
@@ -655,13 +696,183 @@ export class ManagementService {
     return this.listTrades(userId);
   }
 
-  async listNotifications(userId: string): Promise<ManagementNotification[]> {
+  async evaluatePriceAlerts(userId: string) {
+    const trackedSkins = await this.client.userTrackedSkin.findMany({
+      include: {
+        item: {
+          include: {
+            latestPrices: {
+              include: {
+                market: {
+                  select: {
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+              orderBy: {
+                price: "asc",
+              },
+              take: 1,
+            },
+          },
+        },
+      },
+      where: {
+        isActive: true,
+        userId,
+        OR: [{ alertAbovePrice: { not: null } }, { alertBelowPrice: { not: null } }],
+      },
+    });
+    const duplicateWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    for (const trackedSkin of trackedSkins) {
+      const latestPrice = trackedSkin.item.latestPrices[0];
+
+      if (!latestPrice) {
+        continue;
+      }
+
+      const price = latestPrice.price.toNumber();
+      const checks = [
+        {
+          direction: "above" as const,
+          isTriggered:
+            trackedSkin.alertAbovePrice !== null && price >= trackedSkin.alertAbovePrice.toNumber(),
+          threshold: decimalToNumber(trackedSkin.alertAbovePrice),
+        },
+        {
+          direction: "below" as const,
+          isTriggered:
+            trackedSkin.alertBelowPrice !== null && price <= trackedSkin.alertBelowPrice.toNumber(),
+          threshold: decimalToNumber(trackedSkin.alertBelowPrice),
+        },
+      ];
+
+      for (const check of checks) {
+        if (!check.isTriggered || check.threshold === null) {
+          continue;
+        }
+
+        const alertKey = `tracked-skin:${trackedSkin.id}:${check.direction}:${check.threshold.toFixed(2)}`;
+        const existing = await this.client.userNotification.count({
+          where: {
+            createdAt: {
+              gte: duplicateWindowStart,
+            },
+            metadata: {
+              path: ["alertKey"],
+              equals: alertKey,
+            },
+            type: UserNotificationType.PRICE_ALERT,
+            userId,
+          },
+        });
+
+        if (existing > 0) {
+          continue;
+        }
+
+        await this.client.userNotification.create({
+          data: {
+            message: toPriceAlertMessage({
+              currency: latestPrice.currency,
+              direction: check.direction,
+              itemName: trackedSkin.label ?? trackedSkin.item.displayName,
+              price,
+              threshold: check.threshold,
+            }),
+            metadata: {
+              alertKey,
+              currency: latestPrice.currency,
+              direction: check.direction,
+              itemId: trackedSkin.itemId,
+              itemName: trackedSkin.label ?? trackedSkin.item.displayName,
+              marketName: latestPrice.market.name,
+              marketSlug: latestPrice.market.slug,
+              price,
+              threshold: check.threshold,
+              trackedSkinId: trackedSkin.id,
+            },
+            severity: check.direction === "above" ? UserNotificationSeverity.SUCCESS : UserNotificationSeverity.WARNING,
+            title: check.direction === "above" ? "Seuil haut atteint" : "Seuil bas atteint",
+            type: UserNotificationType.PRICE_ALERT,
+            userId,
+          },
+        });
+      }
+    }
+  }
+
+  async evaluateCs2NewsNotifications(userId: string) {
+    const [latestNews] = await getLatestCs2News(1);
+
+    if (!latestNews || latestNews.feedLabel === "Cs-Stonks") {
+      return;
+    }
+
+    const alertKey = `cs2-news:${latestNews.href}:${latestNews.date}`;
+    const existing = await this.client.userNotification.count({
+      where: {
+        metadata: {
+          path: ["alertKey"],
+          equals: alertKey,
+        },
+        type: UserNotificationType.CS2_UPDATE,
+        userId,
+      },
+    });
+
+    if (existing > 0) {
+      return;
+    }
+
+    await this.client.userNotification.create({
+      data: {
+        message: latestNews.title,
+        metadata: {
+          alertKey,
+          feedLabel: latestNews.feedLabel,
+          href: latestNews.href,
+          newsTitle: latestNews.title,
+          publishedAt: latestNews.date,
+          summary: latestNews.summary,
+        },
+        severity: UserNotificationSeverity.INFO,
+        title: "New CS2 news",
+        type: UserNotificationType.CS2_UPDATE,
+        userId,
+      },
+    });
+  }
+
+  async listNotifications(
+    userId: string,
+    options: { evaluateCs2News?: boolean; evaluatePriceAlerts?: boolean; includeCs2News?: boolean } = {},
+  ): Promise<ManagementNotification[]> {
+    if (options.evaluatePriceAlerts) {
+      await this.evaluatePriceAlerts(userId);
+    }
+
+    if (options.evaluateCs2News) {
+      await this.evaluateCs2NewsNotifications(userId);
+    }
+
+    const visibleTypes: UserNotificationType[] = [UserNotificationType.PRICE_ALERT];
+
+    if (options.includeCs2News) {
+      visibleTypes.push(UserNotificationType.CS2_UPDATE);
+    }
+
     const rows = await this.client.userNotification.findMany({
       orderBy: {
         createdAt: "desc",
       },
       take: 12,
       where: {
+        type: {
+          in: visibleTypes,
+        },
         userId,
       },
     });

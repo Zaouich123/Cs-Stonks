@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, LineChart, ShieldCheck, WalletCards } from "lucide-react";
+import { Bell, LineChart, WalletCards } from "lucide-react";
 
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import { Button } from "@/components/ui/Button";
@@ -38,11 +38,7 @@ export function ManagementHeader({ summary, user }: ManagementHeaderProps) {
           )}
 
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {language === "FR" ? "Espace protege" : "Protected space"}
-            </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-white md:text-5xl">
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white md:text-5xl">
               {language === "FR" ? "Management dashboard" : "Management dashboard"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/58 md:text-base">

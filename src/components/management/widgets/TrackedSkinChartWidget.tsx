@@ -11,21 +11,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowUpRight, LineChart, Plus, Search, X } from "lucide-react";
+import { ArrowUpRight, Bell, Check, LineChart, X } from "lucide-react";
 
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import type { ManagementTrackedSkin } from "@/modules/management/types/management.types";
 import { WidgetShell } from "@/components/management/widgets/WidgetShell";
-
-interface ItemSearchRow {
-  displayName: string;
-  id: string;
-  imageUrl: string | null;
-  lowestCurrentPrice: number | null;
-  lowestCurrentPriceCurrency: string | null;
-  marketHashName: string;
-  steamImageUrl: string | null;
-}
 
 interface ApiResponse<T> {
   data?: T;
@@ -110,18 +100,6 @@ function computePriceTrend(data: Array<{ price?: number }>) {
   };
 }
 
-function useDebouncedValue(value: string, delayMs: number) {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedValue(value), delayMs);
-
-    return () => window.clearTimeout(timer);
-  }, [delayMs, value]);
-
-  return debouncedValue;
-}
-
 function PremiumTrackedChart({
   color,
   data,
@@ -203,15 +181,13 @@ export function TrackedSkinChartWidget({
 }: TrackedSkinChartWidgetProps) {
   const { formatMoney, language } = usePreferences();
   const [selectedSkinId, setSelectedSkinId] = React.useState(trackedSkins[0]?.id ?? "");
-  const [searchOpen, setSearchOpen] = React.useState(trackedSkins.length === 0);
+  const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [chartMode, setChartMode] = React.useState<ChartMode>("price");
   const [chartRange, setChartRange] = React.useState<ChartRange>("7d");
-  const [query, setQuery] = React.useState("");
-  const [results, setResults] = React.useState<ItemSearchRow[]>([]);
-  const [searching, setSearching] = React.useState(false);
-  const [addingItemId, setAddingItemId] = React.useState<string | null>(null);
+  const [savingAlert, setSavingAlert] = React.useState(false);
+  const [alertBelowThreshold, setAlertBelowThreshold] = React.useState("");
+  const [alertAboveThreshold, setAlertAboveThreshold] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
-  const debouncedQuery = useDebouncedValue(query, 250);
 
   React.useEffect(() => {
     if (trackedSkins.length === 0) {
@@ -223,43 +199,6 @@ export function TrackedSkinChartWidget({
       setSelectedSkinId(trackedSkins[0]?.id ?? "");
     }
   }, [selectedSkinId, trackedSkins]);
-
-  React.useEffect(() => {
-    const normalizedQuery = debouncedQuery.trim();
-
-    if (normalizedQuery.length < 2) {
-      setResults([]);
-      return;
-    }
-
-    const controller = new AbortController();
-    setSearching(true);
-
-    fetch(`/api/items?limit=10&query=${encodeURIComponent(normalizedQuery)}`, {
-      headers: {
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    })
-      .then((response) => response.json())
-      .then((payload: ApiResponse<{ items: ItemSearchRow[] }>) => {
-        if (!controller.signal.aborted) {
-          setResults(payload.ok ? payload.data?.items ?? [] : []);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setResults([]);
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setSearching(false);
-        }
-      });
-
-    return () => controller.abort();
-  }, [debouncedQuery]);
 
   const selectedSkin = trackedSkins.find((skin) => skin.id === selectedSkinId) ?? trackedSkins[0] ?? null;
   const priceChartData = React.useMemo(
@@ -274,15 +213,53 @@ export function TrackedSkinChartWidget({
   const color = chartMode === "stock" ? "#4da3ff" : rangeTrend.isPositive ? "#22c55e" : "#ef4444";
   const chartData = chartMode === "stock" ? stockChartData : priceChartData;
 
-  const addTrackedSkin = async (item: ItemSearchRow) => {
-    setAddingItemId(item.id);
+  const normalizedBelowThreshold = Number(alertBelowThreshold.replace(",", "."));
+  const normalizedAboveThreshold = Number(alertAboveThreshold.replace(",", "."));
+  const hasBelowThreshold = Number.isFinite(normalizedBelowThreshold) && normalizedBelowThreshold > 0;
+  const hasAboveThreshold = Number.isFinite(normalizedAboveThreshold) && normalizedAboveThreshold > 0;
+  const alertIsActive = Boolean(selectedSkin?.alertAbovePrice || selectedSkin?.alertBelowPrice);
+  const canSaveAlert =
+    Boolean(selectedSkin) &&
+    ((alertBelowThreshold.trim() === "" || hasBelowThreshold) &&
+      (alertAboveThreshold.trim() === "" || hasAboveThreshold));
+
+  const openNotificationModal = () => {
+    if (!selectedSkin) {
+      return;
+    }
+
+    setAlertBelowThreshold(selectedSkin.alertBelowPrice?.toString().replace(".", ",") ?? "");
+    setAlertAboveThreshold(selectedSkin.alertAbovePrice?.toString().replace(".", ",") ?? "");
+    setError(null);
+    setNotificationOpen(true);
+  };
+
+  const saveSelectedSkinAlert = async () => {
+    if (!selectedSkin || !canSaveAlert) {
+      setError(
+        language === "FR"
+          ? "Renseigne un seuil valide ou laisse le champ vide."
+          : "Enter a valid threshold or leave the field empty.",
+      );
+      return;
+    }
+
+    setSavingAlert(true);
     setError(null);
 
     try {
       const response = await fetch("/api/management/tracked-skins", {
         body: JSON.stringify({
-          itemId: item.id,
-          label: item.displayName,
+          alertAbovePrice: alertAboveThreshold.trim() === "" ? null : normalizedAboveThreshold,
+          alertBelowPrice: alertBelowThreshold.trim() === "" ? null : normalizedBelowThreshold,
+          itemId: selectedSkin.item.id,
+          label: selectedSkin.label ?? selectedSkin.item.displayName,
+          targetPrice:
+            alertAboveThreshold.trim() !== ""
+              ? normalizedAboveThreshold
+              : alertBelowThreshold.trim() !== ""
+                ? normalizedBelowThreshold
+                : null,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -297,17 +274,15 @@ export function TrackedSkinChartWidget({
 
       onTrackedSkinsChange(payload.data.trackedSkins);
       setSelectedSkinId(
-        payload.data.trackedSkins.find((skin) => skin.item.id === item.id)?.id ??
+        payload.data.trackedSkins.find((skin) => skin.item.id === selectedSkin.item.id)?.id ??
           payload.data.trackedSkins[0]?.id ??
           "",
       );
-      setSearchOpen(false);
-      setQuery("");
-      setResults([]);
+      setNotificationOpen(false);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to track skin.");
     } finally {
-      setAddingItemId(null);
+      setSavingAlert(false);
     }
   };
 
@@ -316,12 +291,17 @@ export function TrackedSkinChartWidget({
       action={
         <div className="flex items-center gap-2">
           <button
-            className="inline-flex items-center gap-2 rounded-full border border-[#4da3ff]/30 bg-[#4da3ff]/10 px-3 py-1.5 text-xs font-semibold text-[#9acbff] transition hover:bg-[#4da3ff]/15"
-            onClick={() => setSearchOpen((current) => !current)}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${
+              alertIsActive
+                ? "border-emerald-400/35 bg-emerald-400/16 text-emerald-200 hover:bg-emerald-400/22"
+                : "border-[#4da3ff]/30 bg-[#4da3ff]/10 text-[#9acbff] hover:bg-[#4da3ff]/15"
+            }`}
+            disabled={!selectedSkin}
+            onClick={openNotificationModal}
             type="button"
           >
-            {searchOpen ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            {language === "FR" ? "Ajouter" : "Add"}
+            <Bell className="h-3.5 w-3.5" />
+            {language === "FR" ? "Notifier" : "Notify"}
           </button>
           <Link
             className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/62 transition hover:text-white"
@@ -336,59 +316,84 @@ export function TrackedSkinChartWidget({
       eyebrow={language === "FR" ? "Tracking prix" : "Price tracking"}
       title={language === "FR" ? "Skins suivis" : "Tracked skins"}
     >
-      {searchOpen ? (
-        <div className="mb-5 rounded-2xl border border-[#4da3ff]/18 bg-[#4da3ff]/[0.07] p-4">
-          <label className="relative block">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/42" />
-            <input
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#07101d]/85 pl-11 pr-4 text-sm font-semibold text-white outline-none transition placeholder:text-white/35 focus:border-[#4da3ff]/50"
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={language === "FR" ? "Rechercher un skin a tracker..." : "Search a skin to track..."}
-              value={query}
-            />
-          </label>
-
-          {error ? <p className="mt-3 text-sm font-semibold text-rose-200">{error}</p> : null}
-
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {searching ? (
-              <p className="rounded-xl border border-white/8 bg-white/[0.03] p-3 text-sm text-white/42">
-                {language === "FR" ? "Recherche..." : "Searching..."}
-              </p>
-            ) : null}
-            {!searching && query.trim().length >= 2 && results.length === 0 ? (
-              <p className="rounded-xl border border-white/8 bg-white/[0.03] p-3 text-sm text-white/42">
-                {language === "FR" ? "Aucun item trouve." : "No item found."}
-              </p>
-            ) : null}
-            {results.map((item) => (
+      {notificationOpen && selectedSkin ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/68 px-4 backdrop-blur-md">
+          <div className="w-full max-w-xl overflow-hidden rounded-[1.15rem] border border-white/10 bg-[#0b1422] shadow-[0_26px_80px_rgba(0,0,0,0.62)]">
+            <div className="flex items-start justify-between gap-4 border-b border-white/8 p-5">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#9acbff]">
+                  {language === "FR" ? "Notification" : "Notification"}
+                </p>
+                <h3 className="mt-1 text-xl font-black text-white">
+                  {language === "FR" ? "Alerte de prix" : "Price alert"}
+                </h3>
+                <p className="mt-2 truncate text-sm font-semibold text-white/58">
+                  {selectedSkin.label ?? selectedSkin.item.displayName}
+                </p>
+              </div>
               <button
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.035] p-3 text-left transition hover:border-[#4da3ff]/35 hover:bg-white/[0.06] disabled:opacity-55"
-                disabled={addingItemId === item.id}
-                key={item.id}
-                onClick={() => void addTrackedSkin(item)}
+                className="rounded-full border border-white/10 bg-white/[0.04] p-2 text-white/55 transition hover:text-white"
+                onClick={() => setNotificationOpen(false)}
                 type="button"
               >
-                {item.imageUrl ?? item.steamImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    alt={item.displayName}
-                    className="h-12 w-12 rounded-xl object-contain"
-                    src={item.imageUrl ?? item.steamImageUrl ?? ""}
-                  />
-                ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05]">
-                    <LineChart className="h-4 w-4 text-white/35" />
-                  </span>
-                )}
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-white">{item.displayName}</span>
-                  <span className="text-xs text-white/40">
-                    {formatMoney(item.lowestCurrentPrice, item.lowestCurrentPriceCurrency)}
-                  </span>
-                </span>
+                <X className="h-5 w-5" />
               </button>
-            ))}
+            </div>
+
+            <div className="space-y-4 p-5">
+              <label className="block rounded-2xl border border-rose-400/16 bg-[#07101d]/85 p-4">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-rose-200/75">
+                  {language === "FR" ? "Alerte en dessous de" : "Alert below"}
+                </span>
+                <input
+                  className="mt-2 h-11 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-white/32"
+                  inputMode="decimal"
+                  onChange={(event) => setAlertBelowThreshold(event.target.value)}
+                  placeholder={language === "FR" ? "Aucun seuil bas" : "No lower threshold"}
+                  value={alertBelowThreshold}
+                />
+              </label>
+
+              <label className="block rounded-2xl border border-emerald-400/16 bg-[#07101d]/85 p-4">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-200/75">
+                  {language === "FR" ? "Alerte au-dessus de" : "Alert above"}
+                </span>
+                <input
+                  className="mt-2 h-11 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-white/32"
+                  inputMode="decimal"
+                  onChange={(event) => setAlertAboveThreshold(event.target.value)}
+                  placeholder={language === "FR" ? "Aucun seuil haut" : "No upper threshold"}
+                  value={alertAboveThreshold}
+                />
+              </label>
+
+              {error ? <p className="text-sm font-semibold text-rose-200">{error}</p> : null}
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-white/8 p-5">
+              <button
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/62 transition hover:text-white"
+                onClick={() => setNotificationOpen(false)}
+                type="button"
+              >
+                {language === "FR" ? "Annuler" : "Cancel"}
+              </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-full border border-[#4da3ff]/35 bg-[#4da3ff]/14 px-4 py-2 text-sm font-bold text-[#b8dcff] transition hover:bg-[#4da3ff]/20 disabled:cursor-not-allowed disabled:opacity-45"
+                disabled={!canSaveAlert || savingAlert}
+                onClick={() => void saveSelectedSkinAlert()}
+                type="button"
+              >
+                <Check className="h-4 w-4" />
+                {savingAlert
+                  ? language === "FR"
+                    ? "Validation..."
+                    : "Saving..."
+                  : language === "FR"
+                    ? "Valider"
+                    : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -398,19 +403,11 @@ export function TrackedSkinChartWidget({
           <p className="text-base font-semibold text-white">
             {language === "FR" ? "Aucun skin suivi" : "No tracked skin yet"}
           </p>
-          <p className="mt-2 text-sm leading-6 text-white/48">
-            {language === "FR"
-              ? "Ouvre le menu Ajouter, cherche un skin, puis selectionne-le pour afficher son graphique ici."
-              : "Open the Add menu, search a skin, then select it to display its chart here."}
-          </p>
-          <button
-            className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#4da3ff]/30 bg-[#4da3ff]/10 px-4 py-2 text-sm font-semibold text-[#9acbff] transition hover:bg-[#4da3ff]/15"
-            onClick={() => setSearchOpen(true)}
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            {language === "FR" ? "Ajouter un skin" : "Add a skin"}
-          </button>
+            <p className="mt-2 text-sm leading-6 text-white/48">
+              {language === "FR"
+                ? "Ajoute d'abord un skin au tracking pour configurer une notification."
+                : "Add a tracked skin first to configure a notification."}
+            </p>
         </div>
       ) : (
         <div className="space-y-5">

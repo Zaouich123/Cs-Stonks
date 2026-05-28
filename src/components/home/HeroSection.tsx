@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "../ui/Button";
+import Link from "next/link";
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
@@ -31,10 +31,16 @@ export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
         </p>
 
         <div className="flex w-full flex-col gap-4 sm:flex-row">
-          <Button variant="primary" size="lg" className="w-full sm:w-auto">
+          <Link
+            href="/prices"
+            className="inline-flex h-14 w-full items-center justify-center rounded-full bg-[#093066] px-8 text-lg font-medium text-white shadow-[0_4px_14px_rgba(9,48,102,0.4)] transition-colors hover:bg-[#0c4088] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-highlight)] sm:w-auto"
+          >
             {t("exploreMarkets")}
-          </Button>
-          <Button variant="ghost" size="lg" className="w-full sm:w-auto group">
+          </Link>
+          <Link
+            href="/api-docs"
+            className="group inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-lg font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-highlight)] sm:w-auto"
+          >
             {t("accessApi")}
             <svg
               className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -44,7 +50,7 @@ export function HeroSection({ skinImageUrl }: { skinImageUrl: string }) {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
-          </Button>
+          </Link>
         </div>
       </motion.div>
 

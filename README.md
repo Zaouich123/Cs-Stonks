@@ -12,6 +12,7 @@ d'installation.
 ## Acces rapide
 
 - Application locale : `http://localhost:3000`
+- Application Docker : `http://localhost:3000`
 - Documentation API dans l'app : `http://localhost:3000/api-docs`
 - Prisma Studio : `http://localhost:5555`
 - Base PostgreSQL Docker : `localhost:5432`
@@ -22,8 +23,9 @@ d'installation.
 | --- | --- |
 | Code frontend | `src/app`, `src/components`, `src/lib` |
 | Code backend/API | `src/app/api`, `src/modules` |
+| Extension navigateur Steam | `steam-trade-extension` |
 | Schema et migrations BDD | `prisma/schema.prisma`, `prisma/migrations` |
-| Configuration Docker PostgreSQL | `compose.yml`, `docker/postgres/init` |
+| Configuration Docker app + PostgreSQL | `Dockerfile`, `compose.yml`, `docker/postgres/init` |
 | Documentation conception L2 | `avancement/01-rapport-avancement-conception.md` a `avancement/06-ajout-futur-utilisateur-portfolio.md` |
 | Livrable L1 initial | `avancement/etienne_baillieux_livr1_projetmaster.docx` |
 | Planning et sprints | `Agent/SPRINT*.md` |
@@ -47,6 +49,8 @@ d'installation.
   choix de format carre/rectangle, drag and drop et graphiques prix/stock.
 - Page echanges avec analyse manuelle fiable : selection des items donnes/recus,
   quantites, calcul du gain net et comparaison avec les lowest prices en BDD.
+- Extension navigateur locale pour afficher l'analyse de valeur directement
+  dans les offres d'echange Steam visibles par l'utilisateur.
 - Base technique pour analyser des offres Steam lorsque l'API Steam fournit les
   donnees necessaires.
 - API interne de synchronisation catalogue, prix et snapshots.
@@ -128,6 +132,57 @@ npm run setup -- --skip-prices
 
 Si `CSFLOAT_API_KEY` n'est pas renseignee, l'etape CSFloat est ignoree
 proprement et les autres markets continuent.
+
+## Lancement Docker complet
+
+Le projet peut aussi etre lance entierement avec Docker Compose :
+
+- `app` : application Next.js, frontend React et routes API backend.
+- `postgres` : base PostgreSQL locale.
+
+Verifier que `.env` existe avant de lancer Docker :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Puis demarrer l'application Dockerisee :
+
+```bash
+docker compose up -d app
+```
+
+Docker Compose construit l'image Next.js si necessaire, attend que PostgreSQL
+soit pret, puis lance l'application. Ouvrir ensuite :
+
+```text
+http://localhost:3000
+```
+
+Dans Docker, l'application utilise `postgres:5432` comme hote interne pour la
+base de donnees. En local hors Docker, elle continue d'utiliser
+`localhost:5432`.
+
+Commandes utiles :
+
+```bash
+docker compose build app
+docker compose up -d app
+docker compose logs -f app
+docker compose stop app
+docker compose down
+```
+
+Pour initialiser ou mettre a jour la base Docker avec Prisma :
+
+```bash
+docker compose exec app npm run prisma:migrate:deploy
+docker compose exec app npm run job:catalog
+docker compose exec app npm run jobs:daily-markets
+```
+
+L'extension navigateur reste hors Docker : elle s'installe dans Chrome/Edge et
+appelle l'application exposee sur `http://localhost:3000` par defaut.
 
 ## Installation manuelle complete
 
@@ -351,6 +406,14 @@ Redemarrer la base Docker :
 docker compose up -d postgres
 ```
 
+Lancer l'application avec Docker :
+
+```bash
+docker compose up -d app
+```
+
+Ouvrir ensuite `http://localhost:3000`.
+
 ## Verification apres installation
 
 Verifier l'API health :
@@ -489,7 +552,8 @@ arriere-plan sans controle pendant le developpement.
 |   |-- components/         # Composants UI
 |   |-- lib/                # Helpers transverses
 |   |-- modules/            # Logique metier par domaine
-|-- compose.yml             # PostgreSQL Docker
+|-- Dockerfile              # Image Docker de l'application Next.js
+|-- compose.yml             # Application Next.js + PostgreSQL Docker
 |-- package.json            # Scripts npm
 |-- README.md               # Guide de rendu et installation
 ```

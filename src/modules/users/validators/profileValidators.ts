@@ -16,10 +16,19 @@ export const profileUpdateRequestSchema = z
 
 export function parseUserProfileUpdate(input: unknown): UserProfileUpdateInput {
   const parsed = profileUpdateRequestSchema.parse(input);
+  const output: UserProfileUpdateInput = {};
 
-  return {
-    phoneCountryCode: normalizePhoneCountryCode(parsed.phoneCountryCode),
-    phoneNumber: normalizePhoneNumber(parsed.phoneNumber),
-    tradeLink: normalizeTradeLink(parsed.tradeLink),
-  };
+  if ("phoneCountryCode" in parsed) {
+    output.phoneCountryCode = normalizePhoneCountryCode(parsed.phoneCountryCode);
+  }
+
+  if ("phoneNumber" in parsed) {
+    output.phoneNumber = normalizePhoneNumber(parsed.phoneNumber);
+  }
+
+  if ("tradeLink" in parsed) {
+    output.tradeLink = normalizeTradeLink(parsed.tradeLink);
+  }
+
+  return output;
 }

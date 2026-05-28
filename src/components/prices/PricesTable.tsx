@@ -5,9 +5,11 @@ import Link from "next/link";
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 
 interface ItemHistoryPoint {
+  date?: string;
+  hour?: string;
   price: number;
-  snapshotDate: string;
-  snapshotHour: string;
+  snapshotDate?: string;
+  snapshotHour?: string;
 }
 
 interface ItemRow {
@@ -118,27 +120,36 @@ function buildSparklineAreaPath(points: number[]) {
   return `${linePath} L ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT} L 0 ${SPARKLINE_HEIGHT} Z`;
 }
 
+function getHistoryDate(row: ItemHistoryPoint) {
+  return row.date ?? row.snapshotDate ?? "";
+}
+
 function compactDailyHistory(rows: ItemHistoryPoint[]) {
-  const byDay = new Map<string, ItemHistoryPoint>();
+  const byDay = new Map<string, number>();
 
+  // The prices table shows the current lowest market price, so the 7d trend uses
+  // the lowest snapshot price per day across all markets too.
   rows.forEach((row) => {
-    const existing = byDay.get(row.snapshotDate);
+    const day = getHistoryDate(row);
 
-    if (!existing || row.snapshotHour > existing.snapshotHour) {
-      byDay.set(row.snapshotDate, row);
+    if (!day || !Number.isFinite(row.price)) {
+      return;
+    }
+
+    const existing = byDay.get(day);
+
+    if (existing === undefined || row.price < existing) {
+      byDay.set(day, row.price);
     }
   });
 
   return Array.from(byDay.entries())
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([, row]) => row);
+    .map(([, price]) => price);
 }
 
 function computeTrendFromHistory(rows: ItemHistoryPoint[]): ItemTrendData | null {
-  const compactRows = compactDailyHistory(rows).slice(-7);
-  const points = compactRows
-    .map((row) => row.price)
-    .filter((value): value is number => Number.isFinite(value));
+  const points = compactDailyHistory(rows).slice(-7);
 
   if (points.length === 0) {
     return null;
@@ -275,7 +286,6 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
         try {
           const params = new URLSearchParams({
             from,
-            market: item.source,
             sort: "asc",
           });
           const response = await fetch(`/api/items/${item.id}/history?${params.toString()}`, {
@@ -287,7 +297,7 @@ export function PricesTable({ query, itemType, page, onPageChange }: PricesTable
           }
 
           const payload = await response.json();
-          const rows = (payload.data ?? []) as ItemHistoryPoint[];
+          const rows = (payload.data?.series ?? []) as ItemHistoryPoint[];
           return [item.id, computeTrendFromHistory(rows)] as const;
         } catch {
           return [item.id, null] as const;

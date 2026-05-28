@@ -50,12 +50,6 @@ export function SteamIdentityCard({ user }: { user: SessionUser }) {
             <span className="text-white/35">{t("unknown")}</span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-3 text-white/55">
-          <span>{t("phoneStatus")}</span>
-          <span className={user.phoneVerified ? "text-emerald-300" : "text-amber-300"}>
-            {user.phoneVerified ? t("phoneVerified") : t("phoneNotVerified")}
-          </span>
-        </div>
       </div>
     </GlassCard>
   );
