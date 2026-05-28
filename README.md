@@ -38,19 +38,23 @@ d'installation.
 
 - Landing page premium pour presenter le produit.
 - Page `Markets` (`/prices`) avec catalogue, recherche, pagination et prix multi-market.
-- Page detail item avec graphique, prix par marketplace, variantes et origine.
+- Page detail item avec graphique, box de prix actuels par marketplace,
+  stock disponible, lien externe vers chaque market, variantes et origine.
 - Page `Analyze` avec graphique interactif, zoom de plage, outils de dessin,
-  couleurs, undo/redo, nettoyage et export image.
+  projection 30 jours, couleurs, undo/redo, nettoyage et export image.
 - Authentification Steam OpenID.
 - Page profil Steam avec avatar, pseudo, trade link et informations locales.
 - Page inventaire Steam avec estimation des items lorsque les donnees sont
   disponibles.
 - Page management/dashboard avec widgets personnalisables, ajout par grille,
   choix de format carre/rectangle, drag and drop et graphiques prix/stock.
+- Notifications management pour les skins suivis avec seuil bas/haut, affichage
+  dans l'onglet notifications et petite alerte visuelle dans l'application.
 - Page echanges avec analyse manuelle fiable : selection des items donnes/recus,
   quantites, calcul du gain net et comparaison avec les lowest prices en BDD.
 - Extension navigateur locale pour afficher l'analyse de valeur directement
-  dans les offres d'echange Steam visibles par l'utilisateur.
+  dans les offres d'echange Steam visibles par l'utilisateur, avec benefice ou
+  deficit colore dans la page Steam.
 - Base technique pour analyser des offres Steam lorsque l'API Steam fournit les
   donnees necessaires.
 - API interne de synchronisation catalogue, prix et snapshots.
