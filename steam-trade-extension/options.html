@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cs-Stonks Steam Trade Analyzer</title>
+    <style>
+      body {
+        min-width: 380px;
+        margin: 0;
+        padding: 24px;
+        background: #08111f;
+        color: #f5f8ff;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      p {
+        margin: 0 0 18px;
+        color: rgba(245, 248, 255, 0.72);
+        line-height: 1.5;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(245, 248, 255, 0.78);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        border: 1px solid rgba(102, 192, 244, 0.3);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #ffffff;
+        font-size: 14px;
+      }
+
+      button {
+        margin-top: 16px;
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: #66c0f4;
+        color: #06111f;
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      #status {
+        margin-top: 12px;
+        color: #86efac;
+        font-size: 13px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cs-Stonks Trade Analyzer</h1>
+    <p>
+      Indique l'URL de ton application Cs-Stonks. En local, garde la valeur par
+      defaut.
+    </p>
+
+    <label for="apiBase">URL Cs-Stonks</label>
+    <input id="apiBase" type="url" placeholder="http://localhost:3000" />
+
+    <button id="save">Enregistrer</button>
+    <div id="status" role="status"></div>
+
+    <script src="src/options.js"></script>
+  </body>
+</html>

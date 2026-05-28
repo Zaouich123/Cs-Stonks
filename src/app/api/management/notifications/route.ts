@@ -1,3 +1,5 @@
+import { DashboardWidgetType } from "@prisma/client";
+
 import { handleRouteError, successResponse } from "@/lib/api";
 import { ManagementService } from "@/modules/management/services/managementService";
 import { requireManagementSession } from "@/modules/management/services/requireManagementSession";
@@ -5,7 +7,16 @@ import { requireManagementSession } from "@/modules/management/services/requireM
 export async function GET() {
   try {
     const session = await requireManagementSession();
-    const notifications = await new ManagementService().listNotifications(session.user.id);
+    const service = new ManagementService();
+    const widgets = await service.getWidgets(session.user.id);
+    const newsWidgetEnabled = widgets.some(
+      (widget) => widget.widgetType === DashboardWidgetType.CS2_UPDATE && widget.enabled,
+    );
+    const notifications = await service.listNotifications(session.user.id, {
+      evaluateCs2News: newsWidgetEnabled,
+      evaluatePriceAlerts: true,
+      includeCs2News: newsWidgetEnabled,
+    });
 
     return successResponse({ notifications });
   } catch (error) {

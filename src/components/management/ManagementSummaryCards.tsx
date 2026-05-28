@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Bell, Handshake, Store, Wallet } from "lucide-react";
+import { Activity, Bell, Handshake, Wallet } from "lucide-react";
 
 import { usePreferences } from "@/components/preferences/PreferencesProvider";
 import type { ManagementDashboardData } from "@/modules/management/types/management.types";
@@ -25,12 +25,6 @@ export function ManagementSummaryCards({ summary }: ManagementSummaryCardsProps)
       value: summary.trackedSkins.toString(),
     },
     {
-      color: "text-cyan-300",
-      icon: Store,
-      label: language === "FR" ? "Listings actifs" : "Active listings",
-      value: summary.activeListings.toString(),
-    },
-    {
       color: "text-amber-300",
       icon: Handshake,
       label: language === "FR" ? "Trades en attente" : "Pending trades",
@@ -45,7 +39,7 @@ export function ManagementSummaryCards({ summary }: ManagementSummaryCardsProps)
   ];
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
 

@@ -4,6 +4,8 @@ import { HomeFeatures } from "@/components/home/HomeFeatures";
 import { HeroSection } from "@/components/home/HeroSection";
 import { prisma } from "@/lib/db/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   let skinImageUrl = "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17P7NdTRH-t26q4SZlvD7PYTdn2xZ_Ish0u_A89iki1Cx8kFoNWz0LdDGclM-ZAnZ_1m8wOq9gpe1uJ2YwXQ3vCkm53_bnArj1BwcP-Y7hfKcQV-r";
 

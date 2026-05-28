@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, BarChart3, Package2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BarChart3, ExternalLink, Package2, ShieldCheck } from "lucide-react";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { ItemDetailChart, ItemDetailChartPoint } from "@/components/market/ItemDetailChart";
@@ -66,6 +66,8 @@ interface ItemLatestPrice {
   price: number;
   quantity: number | null;
   sales7dVolume: number | null;
+  sourceItemUrl: string | null;
+  sourceMarketUrl: string | null;
 }
 
 interface ItemOriginData {
@@ -93,6 +95,15 @@ const chartRangeOptions: Array<{ days: number; label: string; value: ChartRange 
   { days: 90, label: "90j", value: "90d" },
   { days: 365, label: "1an", value: "1y" },
 ];
+
+const marketLogoUrls: Record<string, string> = {
+  csfloat: "https://csfloat.com/favicon.ico",
+  dmarket: "https://dmarket.com/favicon.ico",
+  skinport: "https://skinport.com/static/favicon.ico",
+  steam: "https://store.steampowered.com/favicon.ico",
+  waxpeer: "https://waxpeer.com/favicon.ico",
+  "white-market": "https://white.market/favicon.ico",
+};
 
 const wearOrder = [
   "Factory New",
@@ -216,6 +227,10 @@ function renderVariantSummary(item: Pick<ItemDetail, "stattrak" | "souvenir"> | 
   }
 
   return <span className="text-white/75">{language === "FR" ? "Édition standard" : "Standard edition"}</span>;
+}
+
+function getMarketLogoUrl(marketSlug: string) {
+  return marketLogoUrls[marketSlug.toLowerCase()] ?? null;
 }
 
 export default function MarketItemDetailPage() {
@@ -442,6 +457,89 @@ export default function MarketItemDetailPage() {
     }));
   }, [currentExterior, currentFlavor, fallbackPhasePreview, familyVariants, heroImage, item, router]);
 
+  const currentPricesBox = (
+    <GlassCard className="p-4 md:p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4da3ff]">
+            {language === "FR" ? "Prix actuels" : "Current prices"}
+          </p>
+          <p className="mt-1 text-xs text-white/42">
+            {language === "FR"
+              ? "Prix et stocks actuels par marketplace."
+              : "Current marketplace prices and stock."}
+          </p>
+        </div>
+        <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-white/45">
+          {latestPrices.length} {language === "FR" ? "sources" : "sources"}
+        </span>
+      </div>
+
+      {latestPrices.length > 0 ? (
+        <div className="grid gap-2">
+          {latestPrices.map((price) => {
+            const logoUrl = getMarketLogoUrl(price.marketSlug);
+            const marketUrl = price.sourceItemUrl ?? price.sourceMarketUrl;
+            const stockLabel =
+              price.quantity === null || price.quantity === undefined ? "N/A" : price.quantity.toLocaleString();
+
+            return (
+              <div
+                key={price.marketSlug}
+                className="flex min-h-[64px] items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.035] px-4 py-3"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-[#030816]">
+                    {logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt="" className="h-5 w-5 object-contain" src={logoUrl} />
+                    ) : (
+                      <span className="text-xs font-black uppercase text-[#4da3ff]">
+                        {price.marketName.slice(0, 2)}
+                      </span>
+                    )}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{price.marketName}</p>
+                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-white/35">
+                      {price.marketSlug}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3 text-right">
+                  <span className="text-sm font-semibold text-white/48">{stockLabel}</span>
+                  <span className="text-lg font-semibold text-white">{formatMoney(price.price, price.currency)}</span>
+                  {marketUrl ? (
+                    <a
+                      className="group inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full border border-[#4da3ff]/25 bg-[#4da3ff]/10 px-3 text-xs font-bold uppercase tracking-[0.14em] text-[#9fd0ff] transition duration-200 hover:-translate-y-0.5 hover:border-[#4da3ff]/60 hover:bg-[#4da3ff]/18 hover:text-white hover:shadow-[0_12px_28px_rgba(77,163,255,0.2)]"
+                      href={marketUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {language === "FR" ? "Voir" : "View"}
+                      <ExternalLink className="h-3.5 w-3.5 transition duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </a>
+                  ) : (
+                    <span className="inline-flex h-9 items-center rounded-full border border-white/8 bg-white/[0.03] px-3 text-xs font-bold uppercase tracking-[0.14em] text-white/24">
+                      {language === "FR" ? "Voir" : "View"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-5 text-sm text-white/38">
+          {language === "FR"
+            ? "Aucun prix actuel disponible pour cette variante."
+            : "No current price is available for this variant."}
+        </div>
+      )}
+    </GlassCard>
+  );
+
   if (!item && !loading) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-[color:var(--color-surface)] text-white">
@@ -521,6 +619,8 @@ export default function MarketItemDetailPage() {
           </div>
 
           <div className="space-y-6">
+            {currentPricesBox}
+
             <GlassCard className="relative overflow-hidden p-6 md:p-8">
               {loading ? (
                 <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[2rem] bg-[#030816]/55 backdrop-blur-sm">
@@ -529,7 +629,7 @@ export default function MarketItemDetailPage() {
               ) : null}
 
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4da3ff]">
                       {t("priceAction")}
@@ -537,14 +637,9 @@ export default function MarketItemDetailPage() {
                     <h2 className="mt-3 text-3xl font-semibold text-white">
                       {getChartRangeLabel(chartRange, language)} {t("marketCurve")}
                     </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-                      {language === "FR"
-                        ? "Mouvement historique du marché pour la variante sélectionnée, alimenté par tes snapshots quotidiens."
-                        : "Historical market movement for the selected item variant, powered by your daily snapshots."}
-                    </p>
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col items-start gap-3 lg:items-end">
                     <div className="flex w-fit rounded-2xl border border-white/8 bg-white/[0.035] p-1">
                       {chartRangeOptions.map((option) => (
                         <button
@@ -564,7 +659,9 @@ export default function MarketItemDetailPage() {
 
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">{t("floor")}</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">
+                          {language === "FR" ? "Prix" : "Price"}
+                        </p>
                         <p className="mt-2 text-xl font-semibold text-white">
                           {formatMoney(currentMarketFloor, currentMarketFloorCurrency)}
                         </p>

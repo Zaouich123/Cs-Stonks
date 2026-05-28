@@ -56,11 +56,12 @@ export class UserService {
   }
 
   async updateProfile(userId: string, input: UserProfileUpdateInput) {
+    const updatesPhone = "phoneCountryCode" in input || "phoneNumber" in input;
     const user = await this.client.user.update({
       data: {
         phoneCountryCode: input.phoneCountryCode,
         phoneNumber: input.phoneNumber,
-        phoneVerified: false,
+        phoneVerified: updatesPhone ? false : undefined,
         tradeLink: input.tradeLink,
       },
       where: {
@@ -72,8 +73,8 @@ export class UserService {
       data: {
         action: "profile_settings_updated",
         metadata: {
-          phoneUpdated: input.phoneNumber !== null,
-          tradeLinkUpdated: input.tradeLink !== null,
+          phoneUpdated: updatesPhone,
+          tradeLinkUpdated: "tradeLink" in input,
         },
         userId,
       },

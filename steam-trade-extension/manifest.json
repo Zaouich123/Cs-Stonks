@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Cs-Stonks Steam Trade Analyzer",
+  "description": "Injecte une analyse de valeur Cs-Stonks directement dans les offres d'echange Steam.",
+  "version": "0.2.0",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:3000/*", "https://steamcommunity.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://steamcommunity.com/*"],
+      "js": ["src/content-script.js"],
+      "css": ["src/content-style.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html"
+}

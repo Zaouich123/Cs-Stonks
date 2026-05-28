@@ -1,0 +1,14 @@
+.git
+.github
+.next
+node_modules
+coverage
+daily-markets.log
+daily-markets.err.log
+next-dev.log
+next-dev.err.log
+*.zip
+*.dump
+tsconfig.tsbuildinfo
+.env
+.tmp

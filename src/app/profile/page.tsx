@@ -4,7 +4,6 @@ import { BackgroundFX } from "@/components/home/BackgroundFX";
 import { Navbar } from "@/components/layout/Navbar";
 import { ProfileActionsCard } from "@/components/profile/ProfileActionsCard";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { PhoneSettingsCard } from "@/components/profile/PhoneSettingsCard";
 import { SteamIdentityCard } from "@/components/profile/SteamIdentityCard";
 import { TradeLinkCard } from "@/components/profile/TradeLinkCard";
 import { getCurrentSession } from "@/modules/auth/session/sessionCookie";
@@ -30,13 +29,8 @@ export default async function ProfilePage() {
             <ProfileActionsCard user={session.user} />
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-5">
             <TradeLinkCard initialTradeLink={session.user.tradeLink} />
-            <PhoneSettingsCard
-              initialPhoneCountryCode={session.user.phoneCountryCode}
-              initialPhoneNumber={session.user.phoneNumber}
-              phoneVerified={session.user.phoneVerified}
-            />
           </div>
         </div>
       </main>
