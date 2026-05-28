@@ -1,11 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ItemRepository } from "@/modules/catalog/catalog.types";
 import { HealthQueryService } from "@/modules/health/health.service";
+import type { MarketRepository } from "@/modules/markets/market.types";
+import type { LatestPriceRepository } from "@/modules/pricing/pricing.types";
+import type { SnapshotRepository } from "@/modules/snapshots/snapshot.types";
+import type { SyncRunRepository } from "@/modules/sync-runs/sync-run.types";
 
-function countRepository(count: number) {
+type CountOnlyRepository = {
+  count: ReturnType<typeof vi.fn>;
+};
+
+function countRepository<TRepository>(count: number): TRepository & CountOnlyRepository {
   return {
     count: vi.fn().mockResolvedValue(count),
-  };
+  } as TRepository & CountOnlyRepository;
 }
 
 describe("HealthQueryService", () => {
@@ -18,11 +27,11 @@ describe("HealthQueryService", () => {
     vi.stubEnv("PRICE_PROVIDER", "mock");
     vi.stubEnv("REAL_PROVIDER_BASE_URL", "https://steam.example.test/market/");
 
-    const itemRepository = countRepository(10);
-    const marketRepository = countRepository(3);
-    const latestPriceRepository = countRepository(42);
-    const snapshotRepository = countRepository(7);
-    const syncRunRepository = countRepository(5);
+    const itemRepository = countRepository<ItemRepository>(10);
+    const marketRepository = countRepository<MarketRepository>(3);
+    const latestPriceRepository = countRepository<LatestPriceRepository>(42);
+    const snapshotRepository = countRepository<SnapshotRepository>(7);
+    const syncRunRepository = countRepository<SyncRunRepository>(5);
     const service = new HealthQueryService(
       itemRepository,
       marketRepository,
@@ -60,11 +69,11 @@ describe("HealthQueryService", () => {
     vi.stubEnv("REAL_PROVIDER_BASE_URL", "https://steamcommunity.com/market/");
 
     const service = new HealthQueryService(
-      countRepository(0),
-      countRepository(0),
-      countRepository(0),
-      countRepository(0),
-      countRepository(0),
+      countRepository<ItemRepository>(0),
+      countRepository<MarketRepository>(0),
+      countRepository<LatestPriceRepository>(0),
+      countRepository<SnapshotRepository>(0),
+      countRepository<SyncRunRepository>(0),
     );
 
     const health = await service.getHealth();

@@ -4,9 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { PrismaLatestPriceRepository } from "@/modules/pricing/pricing.repository";
 import type { LatestPriceWriteInput } from "@/modules/pricing/pricing.types";
 
-function money(value: number) {
+type FakeDecimal = {
+  comparedTo(other: FakeDecimal): number;
+  toNumber(): number;
+};
+
+function money(value: number): FakeDecimal {
   return {
-    comparedTo: (other: ReturnType<typeof money>) => value - other.toNumber(),
+    comparedTo: (other) => value - other.toNumber(),
     toNumber: () => value,
   };
 }
